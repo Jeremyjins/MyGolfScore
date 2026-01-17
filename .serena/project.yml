@@ -1,0 +1,21 @@
+# Serena Project Configuration
+# https://oraios.github.io/serena/
+
+# Language for language server support
+language: typescript
+
+# Project root directory (relative to this file)
+project_root: ..
+
+# Enable language server features for intelligent code navigation
+use_language_server: true
+
+# Optional: Exclude certain tools if needed
+# excluded_tools:
+#   - execute_shell_command
+
+# Optional: Enable read-only mode for analysis only
+# read_only: true
+
+# Optional: Custom memory settings
+# memory_dir: .serena/memory
