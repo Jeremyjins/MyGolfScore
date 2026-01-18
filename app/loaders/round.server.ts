@@ -33,6 +33,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     .single();
 
   if (roundError || !round) {
+    // Log error for debugging
+    if (roundError) {
+      console.error('Round fetch error:', roundError, 'ID:', id);
+    } else {
+      console.error('Round not found or unauthorized:', 'ID:', id, 'User:', session.userId);
+    }
     throw new Response('라운드를 찾을 수 없습니다.', { status: 404 });
   }
 

@@ -1,13 +1,15 @@
 // Score Input Bottom Sheet Component
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from '~/components/ui/sheet';
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
+import type { ScoreDisplayMode } from '~/components/score/vertical-score-table';
 
 interface ScoreInputSheetProps {
   open: boolean;
@@ -17,6 +19,7 @@ interface ScoreInputSheetProps {
   currentScore: number | null;
   playerName: string;
   onScoreChange: (score: number) => void;
+  scoreDisplayMode?: ScoreDisplayMode;
 }
 
 export function ScoreInputSheet({
@@ -27,10 +30,19 @@ export function ScoreInputSheet({
   currentScore,
   playerName,
   onScoreChange,
+  scoreDisplayMode = 'par',
 }: ScoreInputSheetProps) {
+  // 현재 스코어가 없으면 파(par)를 기본값으로 설정
   const [selectedScore, setSelectedScore] = useState<number | null>(
-    currentScore
+    currentScore ?? par
   );
+
+  // 시트가 열릴 때마다 선택값 초기화
+  useEffect(() => {
+    if (open) {
+      setSelectedScore(currentScore ?? par);
+    }
+  }, [open, currentScore, par]);
 
   // 점수 범위: 1 ~ 15 (현실적인 골프 스코어)
   const scores = Array.from({ length: 15 }, (_, i) => i + 1);
@@ -46,6 +58,18 @@ export function ScoreInputSheet({
     if (diff === 3) return '트리플보기';
     if (diff > 3) return `+${diff}`;
     return '';
+  };
+
+  // 버튼에 표시할 숫자 (파 대비 or 타수)
+  const getButtonDisplay = (score: number) => {
+    if (scoreDisplayMode === 'stroke') {
+      return String(score);
+    }
+    // Par 모드: 파 대비 표시
+    const diff = score - par;
+    if (diff === 0) return 'E';
+    if (diff > 0) return `+${diff}`;
+    return String(diff);
   };
 
   const getScoreColor = (score: number) => {
@@ -72,7 +96,9 @@ export function ScoreInputSheet({
           <SheetTitle>
             {holeNumber}번 홀 - {playerName}
           </SheetTitle>
-          <p className="text-sm text-muted-foreground">Par {par}</p>
+          <SheetDescription>
+            Par {par} - 스코어를 선택하세요
+          </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4">
@@ -89,7 +115,7 @@ export function ScoreInputSheet({
                     : 'bg-muted hover:bg-muted/80'
                 )}
               >
-                <span className="text-xl font-bold">{score}</span>
+                <span className="text-xl font-bold">{getButtonDisplay(score)}</span>
                 {score >= par - 2 && score <= par + 3 && (
                   <span className="text-[10px] opacity-80">
                     {getScoreLabel(score)}

@@ -56,6 +56,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       supabase.rpc('get_user_stats', { p_user_id: userId }),
     ]);
 
+    if (statsResult.error) {
+      console.error('Stats RPC error:', statsResult.error);
+    }
+
     return {
       userName: session.userName,
       recentRounds: roundsResult.data ?? [],

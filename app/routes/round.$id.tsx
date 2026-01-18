@@ -16,28 +16,43 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
-import { ScoreTable } from '~/components/score/score-table';
+import {
+  VerticalScoreTable,
+  type ScoreDisplayMode,
+} from '~/components/score/vertical-score-table';
 import { ScoreInputSheet } from '~/components/score/score-input-sheet';
-import { ArrowLeftIcon, CheckCircleIcon } from '~/components/ui/icons';
+import { ArrowLeftIcon, CheckCircleIcon, CheckIcon } from '~/components/ui/icons';
 import { formatScoreToPar } from '~/lib/score-utils';
+import { cn } from '~/lib/utils';
 import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
 
 export { loader, action } from '~/loaders/round.server';
 
 const STORAGE_KEY_PREFIX = 'round_scores_';
+const SCORE_MODE_KEY = 'score_display_mode';
 
 export default function RoundPage({ loaderData }: Route.ComponentProps) {
-  const { round, userName } = loaderData as { round: RoundDetail; userName: string };
+  const { round } = loaderData as { round: RoundDetail; userName: string };
   const fetcher = useFetcher<{ success?: boolean; completed?: boolean }>();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'out' | 'in'>('out');
   const [players, setPlayers] = useState<PlayerScore[]>(round.players);
   const [inputSheet, setInputSheet] = useState<{
     open: boolean;
     playerId: string;
     holeNumber: number;
   }>({ open: false, playerId: '', holeNumber: 1 });
+
+  // 스코어 표시 모드: stroke (타수) / par (파 대비)
+  const [scoreDisplayMode, setScoreDisplayMode] = useState<ScoreDisplayMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(SCORE_MODE_KEY) as ScoreDisplayMode) || 'par';
+    }
+    return 'par';
+  });
+
+  // 저장 상태 표시
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const holes = (round.course?.holes as HoleInfo[]) ?? [];
   const storageKey = `${STORAGE_KEY_PREFIX}${round.id}`;
@@ -48,7 +63,6 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     if (saved) {
       try {
         const savedPlayers = JSON.parse(saved) as PlayerScore[];
-        // 서버 데이터와 로컬 데이터 병합 (로컬이 더 최신일 수 있음)
         setPlayers((current) =>
           current.map((player) => {
             const savedPlayer = savedPlayers.find((sp) => sp.id === player.id);
@@ -67,6 +81,11 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     }
   }, [storageKey]);
 
+  // 스코어 표시 모드 저장
+  useEffect(() => {
+    localStorage.setItem(SCORE_MODE_KEY, scoreDisplayMode);
+  }, [scoreDisplayMode]);
+
   // 스코어 변경 시 LocalStorage에 저장
   const saveToStorage = useCallback(
     (updatedPlayers: PlayerScore[]) => {
@@ -74,6 +93,17 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     },
     [storageKey]
   );
+
+  // 저장 상태 업데이트
+  useEffect(() => {
+    if (fetcher.state === 'submitting') {
+      setSaveStatus('saving');
+    } else if (fetcher.data?.success) {
+      setSaveStatus('saved');
+      const timer = setTimeout(() => setSaveStatus('idle'), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [fetcher.state, fetcher.data]);
 
   // 완료 후 리다이렉트
   useEffect(() => {
@@ -133,10 +163,23 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     );
   };
 
+  // 플레이한 홀의 파 합계 계산
+  const calculatePlayedPar = (player: PlayerScore) => {
+    const playedHoleNumbers = Object.keys(player.scores).map(Number);
+    return holes
+      .filter((h) => playedHoleNumbers.includes(h.hole))
+      .reduce((sum, h) => sum + h.par, 0);
+  };
+
   const totalPar = holes.reduce((sum, h) => sum + h.par, 0);
 
+  const getPlayerColor = (index: number) => {
+    const colors = ['bg-primary', 'bg-orange-500', 'bg-purple-500', 'bg-teal-500'];
+    return colors[index] || 'bg-gray-500';
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-4">
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="flex items-center justify-between px-4 h-14">
@@ -149,7 +192,19 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
             <h1 className="font-semibold text-sm">
               {round.course?.name || '코스 미지정'}
             </h1>
-            <p className="text-xs text-muted-foreground">Par {totalPar}</p>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <span>Par {totalPar}</span>
+              {/* 자동 저장 인디케이터 */}
+              {saveStatus === 'saving' && (
+                <span className="text-yellow-600 animate-pulse">저장 중...</span>
+              )}
+              {saveStatus === 'saved' && (
+                <span className="text-green-600 flex items-center gap-0.5">
+                  <CheckIcon className="w-3 h-3" />
+                  저장됨
+                </span>
+              )}
+            </div>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -182,30 +237,30 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
           <div className="flex justify-around">
             {players.map((player, index) => {
               const total = calculateTotalForPlayer(player);
-              const scoredHoles = Object.keys(player.scores).length;
-              const scoredPar = holes
-                .slice(0, scoredHoles)
-                .reduce((sum, h) => sum + h.par, 0);
-              const diff = total - scoredPar;
+              const playedPar = calculatePlayedPar(player);
+              const diff = total - playedPar;
+              const hasScores = Object.keys(player.scores).length > 0;
 
               return (
                 <div key={player.id} className="text-center">
-                  <p className="text-xs text-muted-foreground truncate max-w-16">
-                    {player.name}
-                  </p>
-                  <p className="text-xl font-bold">{total || '-'}</p>
-                  {total > 0 && (
-                    <p
-                      className={
-                        diff > 0
-                          ? 'text-xs text-blue-600'
-                          : diff < 0
-                          ? 'text-xs text-red-600'
-                          : 'text-xs text-green-600'
-                      }
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <span
+                      className={cn(
+                        'w-5 h-5 rounded-full flex items-center justify-center text-xs text-white',
+                        getPlayerColor(index)
+                      )}
                     >
-                      {formatScoreToPar(diff)}
+                      {player.name.charAt(0)}
+                    </span>
+                    <p className="text-xs text-muted-foreground truncate max-w-14">
+                      {player.name}
                     </p>
+                  </div>
+                  <p className="text-xl font-bold">
+                    {hasScores ? (scoreDisplayMode === 'par' ? formatScoreToPar(diff) : total) : '-'}
+                  </p>
+                  {hasScores && scoreDisplayMode === 'par' && (
+                    <p className="text-xs text-muted-foreground">({total}타)</p>
                   )}
                 </div>
               );
@@ -214,43 +269,69 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
         </CardContent>
       </Card>
 
-      {/* 탭: OUT / IN */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as 'out' | 'in')}
-        className="px-4 mt-4"
-      >
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="out">전반 (OUT)</TabsTrigger>
-          <TabsTrigger value="in">후반 (IN)</TabsTrigger>
-        </TabsList>
+      {/* 스코어 표시 모드 토글 */}
+      <div className="flex items-center justify-center gap-2 px-4 mt-3">
+        <span className="text-xs text-muted-foreground">스코어 표시:</span>
+        <div className="inline-flex rounded-lg border p-0.5 bg-muted/50">
+          <button
+            onClick={() => setScoreDisplayMode('par')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              scoreDisplayMode === 'par'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            파 대비
+          </button>
+          <button
+            onClick={() => setScoreDisplayMode('stroke')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              scoreDisplayMode === 'stroke'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            타수
+          </button>
+        </div>
+      </div>
 
-        <TabsContent value="out" className="mt-4">
-          <Card>
-            <CardContent className="p-2">
-              <ScoreTable
+      {/* 전반/후반 탭 스코어 테이블 */}
+      <Card className="mx-4 mt-3">
+        <CardContent className="p-2">
+          <Tabs defaultValue="front" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-2">
+              <TabsTrigger value="front">전반 (OUT)</TabsTrigger>
+              <TabsTrigger value="back">후반 (IN)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="front" className="mt-0">
+              <VerticalScoreTable
                 holes={holes}
                 players={players}
                 onCellClick={handleCellClick}
                 isFirstNine={true}
+                scoreDisplayMode={scoreDisplayMode}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="in" className="mt-4">
-          <Card>
-            <CardContent className="p-2">
-              <ScoreTable
+            </TabsContent>
+            <TabsContent value="back" className="mt-0">
+              <VerticalScoreTable
                 holes={holes}
                 players={players}
                 onCellClick={handleCellClick}
                 isFirstNine={false}
+                scoreDisplayMode={scoreDisplayMode}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* 자동 저장 안내 */}
+      <p className="text-center text-xs text-muted-foreground mt-3 px-4">
+        스코어는 입력 시 자동으로 저장됩니다
+      </p>
 
       {/* 스코어 입력 시트 */}
       {currentHole && currentPlayer && (
@@ -262,6 +343,7 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
           currentScore={currentPlayer.scores[inputSheet.holeNumber] ?? null}
           playerName={currentPlayer.name}
           onScoreChange={handleScoreChange}
+          scoreDisplayMode={scoreDisplayMode}
         />
       )}
     </div>

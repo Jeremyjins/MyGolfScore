@@ -84,11 +84,12 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const players = [
-    { round_id: round.id, user_id: session.userId, player_order: 0 },
+    { round_id: round.id, user_id: session.userId, player_order: 0, is_owner: true },
     ...companionIds.map((companionId, index) => ({
       round_id: round.id,
       companion_id: companionId,
       player_order: index + 1,
+      is_owner: false,
     })),
   ];
 

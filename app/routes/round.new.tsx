@@ -1,5 +1,5 @@
 // Round Start Wizard Page
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useFetcher } from 'react-router';
 import type { Route } from './+types/round.new';
 import { Button } from '~/components/ui/button';
@@ -29,9 +29,11 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
   );
 
   // 라운드 생성 성공 시 이동
-  if (fetcher.data?.success && fetcher.data?.roundId) {
-    navigate(`/round/${fetcher.data.roundId}`);
-  }
+  useEffect(() => {
+    if (fetcher.data?.success && fetcher.data?.roundId) {
+      navigate(`/round/${fetcher.data.roundId}`);
+    }
+  }, [fetcher.data?.success, fetcher.data?.roundId, navigate]);
 
   const handleCompanionToggle = (companionId: string) => {
     setSelectedCompanionIds((prev) => {

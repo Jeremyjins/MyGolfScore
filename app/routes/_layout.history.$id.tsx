@@ -6,7 +6,6 @@ import { Header } from '~/components/layout/header';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,20 +22,36 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { formatScoreToPar } from '~/lib/score-utils';
 import { cn } from '~/lib/utils';
-import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
-import { useEffect } from 'react';
+import type { HoleInfo, RoundDetail } from '~/types';
+import { useEffect, useState } from 'react';
+import type { ScoreDisplayMode } from '~/components/score/vertical-score-table';
+
+const SCORE_MODE_KEY = 'score_display_mode';
 
 export { loader, action } from '~/loaders/history-detail.server';
 
 export default function HistoryDetailPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { round, userName } = loaderData as { round: RoundDetail; userName: string };
+  const { round } = loaderData as { round: RoundDetail; userName: string };
   const fetcher = useFetcher<{ deleted?: boolean }>();
   const navigate = useNavigate();
 
   const holes = (round.course?.holes as HoleInfo[]) ?? [];
   const totalPar = holes.reduce((sum, h) => sum + h.par, 0);
+
+  // 스코어 표시 모드
+  const [scoreDisplayMode, setScoreDisplayMode] = useState<ScoreDisplayMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(SCORE_MODE_KEY) as ScoreDisplayMode) || 'par';
+    }
+    return 'par';
+  });
+
+  // 스코어 표시 모드 저장
+  useEffect(() => {
+    localStorage.setItem(SCORE_MODE_KEY, scoreDisplayMode);
+  }, [scoreDisplayMode]);
 
   // 삭제 후 리다이렉트
   useEffect(() => {
@@ -60,101 +75,104 @@ export default function HistoryDetailPage({
     return 'bg-blue-300 text-blue-900'; // Triple+
   };
 
-  const renderScoreTable = (isFirstNine: boolean) => {
-    const displayHoles = isFirstNine
-      ? holes.filter((h) => h.hole <= 9)
-      : holes.filter((h) => h.hole > 9);
+  const formatScore = (score: number | null, par: number): string => {
+    if (score === null) return '-';
+    if (scoreDisplayMode === 'stroke') {
+      return String(score);
+    }
+    const diff = score - par;
+    if (diff === 0) return 'E';
+    if (diff > 0) return `+${diff}`;
+    return String(diff);
+  };
 
+  const formatTotalScore = (total: number, par: number, hasScores: boolean): string => {
+    if (!hasScores) return '-';
+    if (scoreDisplayMode === 'stroke') {
+      return String(total);
+    }
+    const diff = total - par;
+    if (diff === 0) return 'E';
+    if (diff > 0) return `+${diff}`;
+    return String(diff);
+  };
+
+  const frontNine = holes.filter((h) => h.hole <= 9);
+  const backNine = holes.filter((h) => h.hole > 9);
+  const frontPar = frontNine.reduce((sum, h) => sum + h.par, 0);
+  const backPar = backNine.reduce((sum, h) => sum + h.par, 0);
+
+  const getPlayerColor = (index: number) => {
+    const colors = ['bg-primary', 'bg-orange-500', 'bg-purple-500', 'bg-teal-500'];
+    return colors[index] || 'bg-gray-500';
+  };
+
+  const renderScoreTable = (
+    displayHoles: HoleInfo[],
+    label: string,
+    isBackNine: boolean
+  ) => {
     const ninePar = displayHoles.reduce((sum, h) => sum + h.par, 0);
 
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2 px-1 text-left font-medium text-muted-foreground w-20">
-                홀
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b bg-muted/30">
+            <th className="py-2 px-1 text-left font-medium text-muted-foreground w-16">
+              홀
+            </th>
+            {displayHoles.map((hole) => (
+              <th key={hole.hole} className="py-2 px-1 text-center font-medium min-w-7">
+                {hole.hole}
               </th>
-              {displayHoles.map((hole) => (
-                <th
-                  key={hole.hole}
-                  className="py-2 px-1 text-center font-medium w-9"
-                >
-                  {hole.hole}
-                </th>
-              ))}
-              <th className="py-2 px-1 text-center font-medium w-12 bg-muted/50">
-                합계
-              </th>
-            </tr>
-            <tr className="border-b bg-muted/30">
-              <td className="py-1 px-1 text-xs text-muted-foreground">Par</td>
-              {displayHoles.map((hole) => (
-                <td
-                  key={hole.hole}
-                  className="py-1 px-1 text-center text-xs text-muted-foreground"
-                >
-                  {hole.par}
-                </td>
-              ))}
-              <td className="py-1 px-1 text-center text-xs text-muted-foreground bg-muted/50">
-                {ninePar}
+            ))}
+            <th className="py-2 px-1 text-center font-bold bg-muted/50 min-w-9">{label}</th>
+          </tr>
+          <tr className="border-b">
+            <td className="py-1 px-1 text-muted-foreground">Par</td>
+            {displayHoles.map((hole) => (
+              <td key={hole.hole} className="py-1 px-1 text-center text-muted-foreground">
+                {hole.par}
               </td>
-            </tr>
-          </thead>
-          <tbody>
-            {round.players.map((player, index) => {
-              const nineTotal = displayHoles.reduce((sum, hole) => {
-                const score = player.scores[hole.hole];
-                return sum + (score ?? 0);
-              }, 0);
+            ))}
+            <td className="py-1 px-1 text-center text-muted-foreground bg-muted/50">{ninePar}</td>
+          </tr>
+        </thead>
+        <tbody>
+          {round.players.map((player, index) => {
+            const nineTotal = displayHoles.reduce((sum, hole) => sum + (player.scores[hole.hole] ?? 0), 0);
+            const hasScores = displayHoles.some((h) => player.scores[h.hole] !== undefined);
 
-              return (
-                <tr key={player.id} className="border-b">
-                  <td className="py-2 px-1">
-                    <div className="flex items-center gap-1">
-                      <span
-                        className={cn(
-                          'w-5 h-5 rounded-full flex items-center justify-center text-xs text-white',
-                          index === 0
-                            ? 'bg-primary'
-                            : index === 1
-                            ? 'bg-orange-500'
-                            : index === 2
-                            ? 'bg-purple-500'
-                            : 'bg-teal-500'
-                        )}
-                      >
-                        {player.name.charAt(0)}
-                      </span>
-                      <span className="text-xs truncate max-w-14">
-                        {player.name}
-                      </span>
-                    </div>
-                  </td>
-                  {displayHoles.map((hole) => {
-                    const score = player.scores[hole.hole];
-                    return (
-                      <td
-                        key={hole.hole}
-                        className={cn(
-                          'py-2 px-1 text-center',
-                          getScoreStyle(score ?? null, hole.par)
-                        )}
-                      >
-                        {score ?? '-'}
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-1 text-center font-medium bg-muted/50">
-                    {nineTotal || '-'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+            return (
+              <tr key={player.id} className="border-b">
+                <td className="py-2 px-1">
+                  <div className="flex items-center gap-1">
+                    <span className={cn('w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white', getPlayerColor(index))}>
+                      {player.name.charAt(0)}
+                    </span>
+                    <span className="truncate max-w-12">{player.name}</span>
+                  </div>
+                </td>
+                {displayHoles.map((hole) => {
+                  const score = player.scores[hole.hole] ?? null;
+                  return (
+                    <td key={hole.hole} className={cn('py-2 px-1 text-center', getScoreStyle(score, hole.par))}>
+                      {formatScore(score, hole.par)}
+                    </td>
+                  );
+                })}
+                <td className={cn('py-2 px-1 text-center font-medium bg-muted/50',
+                  hasScores && nineTotal - ninePar > 0 && 'text-blue-600',
+                  hasScores && nineTotal - ninePar < 0 && 'text-red-600',
+                  hasScores && nineTotal - ninePar === 0 && 'text-green-600'
+                )}>
+                  {formatTotalScore(nineTotal, ninePar, hasScores)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     );
   };
 
@@ -174,13 +192,11 @@ export default function HistoryDetailPage({
         }
         rightAction={
           <div className="flex gap-1">
-            {round.status === 'in_progress' && (
-              <Link to={`/round/${round.id}`}>
-                <Button variant="ghost" size="icon">
-                  <EditIcon className="w-5 h-5" />
-                </Button>
-              </Link>
-            )}
+            <Link to={`/round/${round.id}`}>
+              <Button variant="ghost" size="icon">
+                <EditIcon className="w-5 h-5" />
+              </Button>
+            </Link>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -264,25 +280,48 @@ export default function HistoryDetailPage({
         </CardContent>
       </Card>
 
-      {/* 상세 스코어카드 */}
-      <Tabs defaultValue="out">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="out">전반 (OUT)</TabsTrigger>
-          <TabsTrigger value="in">후반 (IN)</TabsTrigger>
-        </TabsList>
+      {/* 스코어 표시 모드 토글 */}
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <span className="text-xs text-muted-foreground">스코어 표시:</span>
+        <div className="inline-flex rounded-lg border p-0.5 bg-muted/50">
+          <button
+            onClick={() => setScoreDisplayMode('par')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              scoreDisplayMode === 'par'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            파 대비
+          </button>
+          <button
+            onClick={() => setScoreDisplayMode('stroke')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              scoreDisplayMode === 'stroke'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            타수
+          </button>
+        </div>
+      </div>
 
-        <TabsContent value="out" className="mt-4">
-          <Card>
-            <CardContent className="p-2">{renderScoreTable(true)}</CardContent>
-          </Card>
-        </TabsContent>
+      {/* OUT 코스 (전반) */}
+      <Card className="mb-3">
+        <CardContent className="p-2">
+          {renderScoreTable(frontNine, 'OUT', false)}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="in" className="mt-4">
-          <Card>
-            <CardContent className="p-2">{renderScoreTable(false)}</CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* IN 코스 (후반) */}
+      <Card>
+        <CardContent className="p-2">
+          {renderScoreTable(backNine, 'IN', true)}
+        </CardContent>
+      </Card>
     </PageContainer>
   );
 }

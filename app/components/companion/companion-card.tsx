@@ -56,7 +56,7 @@ export function CompanionCard({
 
   if (!onClick) {
     return (
-      <Link to={`/companions/${companion.id}`}>
+      <Link to={`/companions/${companion.id}`} className="block">
         {content}
       </Link>
     );

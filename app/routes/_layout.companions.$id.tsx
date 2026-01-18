@@ -1,5 +1,5 @@
 // Companion Detail Page
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useFetcher, useNavigate } from 'react-router';
 import type { Route } from './+types/_layout.companions.$id';
 import { PageContainer } from '~/components/layout/page-container';
@@ -63,9 +63,11 @@ export default function CompanionDetailPage({
   const [editName, setEditName] = useState(companion.name);
 
   // 삭제 후 리다이렉트
-  if (fetcher.data?.redirect) {
-    navigate(fetcher.data.redirect);
-  }
+  useEffect(() => {
+    if (fetcher.data?.redirect) {
+      navigate(fetcher.data.redirect);
+    }
+  }, [fetcher.data?.redirect, navigate]);
 
   const handleUpdate = () => {
     if (!editName.trim()) return;

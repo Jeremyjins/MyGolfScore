@@ -74,7 +74,7 @@ export default function SettingsPage({ loaderData }: Route.ComponentProps) {
 
       {/* 메뉴 */}
       <div className="space-y-2 mb-6">
-        <Link to="/courses">
+        <Link to="/courses" className="block">
           <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
             <CardContent className="flex items-center gap-3 py-4">
               <GolfIcon className="w-5 h-5 text-muted-foreground" />
@@ -83,7 +83,7 @@ export default function SettingsPage({ loaderData }: Route.ComponentProps) {
           </Card>
         </Link>
 
-        <Link to="/companions">
+        <Link to="/companions" className="block">
           <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
             <CardContent className="flex items-center gap-3 py-4">
               <UsersIcon className="w-5 h-5 text-muted-foreground" />

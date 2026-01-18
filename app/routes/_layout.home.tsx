@@ -6,7 +6,7 @@ import { Header } from '~/components/layout/header';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
-import { GolfIcon, TrendingUpIcon, TrophyIcon } from '~/components/ui/icons';
+import { GolfIcon, TrendingUpIcon, TrophyIcon, TargetIcon, CalendarCheckIcon } from '~/components/ui/icons';
 import { formatScoreToPar } from '~/lib/score-utils';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -44,10 +44,10 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 gap-3 mb-8">
         <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUpIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">핸디캡</span>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUpIcon className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">핸디캡</span>
             </div>
             <p className="text-2xl font-bold">
               {stats.handicap > 0 ? stats.handicap.toFixed(1) : '-'}
@@ -56,10 +56,10 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
         </Card>
 
         <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <TrophyIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">베스트</span>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrophyIcon className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">베스트</span>
             </div>
             <p className="text-2xl font-bold">
               {stats.bestScore !== 0 ? formatScoreToPar(stats.bestScore) : '-'}
@@ -68,8 +68,11 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
         </Card>
 
         <Card>
-          <CardContent className="pt-4 pb-3">
-            <span className="text-xs text-muted-foreground">평균 스코어</span>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TargetIcon className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">평균 스코어</span>
+            </div>
             <p className="text-2xl font-bold">
               {stats.averageScore > 0 ? Math.round(stats.averageScore) : '-'}
             </p>
@@ -77,8 +80,11 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
         </Card>
 
         <Card>
-          <CardContent className="pt-4 pb-3">
-            <span className="text-xs text-muted-foreground">총 라운드</span>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarCheckIcon className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">총 라운드</span>
+            </div>
             <p className="text-2xl font-bold">{stats.totalRounds}회</p>
           </CardContent>
         </Card>
