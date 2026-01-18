@@ -24,13 +24,13 @@ export function CompanionCard({
   const content = (
     <Card
       className={cn(
-        'transition-all',
+        'transition-all py-2',
         selected && 'ring-2 ring-primary',
         onClick && 'cursor-pointer hover:bg-accent/50'
       )}
       onClick={onClick}
     >
-      <CardContent className="flex items-center justify-between py-3">
+      <CardContent className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <UserIcon className="w-5 h-5 text-muted-foreground" />

@@ -73,7 +73,7 @@ export default function SettingsPage({ loaderData }: Route.ComponentProps) {
       </Card>
 
       {/* 메뉴 */}
-      <div className="space-y-2 mb-6">
+      <div className="space-y-4 mb-4">
         <Link to="/courses" className="block">
           <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
             <CardContent className="flex items-center gap-3 py-4">

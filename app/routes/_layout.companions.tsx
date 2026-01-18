@@ -97,7 +97,7 @@ export default function CompanionsPage({ loaderData }: Route.ComponentProps) {
           </Button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {companions.map((companion) => (
             <CompanionCard
               key={companion.id}
