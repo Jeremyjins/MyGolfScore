@@ -131,10 +131,10 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
               전체보기
             </Link>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {recentRounds.slice(0, 3).map((round: any) => (
               <Link key={round.id} to={`/history/${round.id}`}>
-                <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+                <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
                   <CardContent className="flex items-center justify-between py-3">
                     <div>
                       <p className="font-medium">
