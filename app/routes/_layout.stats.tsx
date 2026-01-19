@@ -4,6 +4,7 @@ import { PageContainer } from '~/components/layout/page-container';
 import { Header } from '~/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ScoreDistributionChart } from '~/components/charts/score-distribution-chart';
+import { ScoreTrendChart } from '~/components/charts/score-trend-chart';
 import { StatsCards } from '~/components/stats/stats-cards';
 import {
   ChartContainer,
@@ -24,18 +25,7 @@ import { format, parseISO } from 'date-fns';
 
 export { loader } from '~/loaders/stats.server';
 
-// Chart configuration
-const scoreChartConfig: ChartConfig = {
-  score: {
-    label: '스코어',
-    color: '#f97316', // orange-500
-  },
-  totalStrokes: {
-    label: '총 타수',
-    color: '#6b7280', // gray-500
-  },
-};
-
+// Chart configuration for handicap and average trend charts
 const handicapChartConfig: ChartConfig = {
   handicap: {
     label: '핸디캡',
@@ -106,29 +96,22 @@ const calculateAverageHistory = (rounds: RoundDataForCalc[]): number[] => {
 export default function StatsPage({ loaderData }: Route.ComponentProps) {
   const { stats } = loaderData;
 
-  // Transform roundHistory for line chart
-  const lineChartData = (stats.roundHistory || []).map((round) => ({
-    date: format(parseISO(round.date), 'M/d'),
-    score: round.score,
-    totalStrokes: round.totalStrokes,
-    fullDate: round.date,
-  }));
-
   // Calculate average score from roundHistory (par-relative)
-  const averageScoreToPar = lineChartData.length > 0
-    ? Math.round(lineChartData.reduce((sum, r) => sum + r.score, 0) / lineChartData.length)
+  const roundHistory = stats.roundHistory || [];
+  const averageScoreToPar = roundHistory.length > 0
+    ? Math.round(roundHistory.reduce((sum, r) => sum + r.score, 0) / roundHistory.length)
     : null;
 
   // Calculate handicap and average history for trend charts
-  const roundsForCalc = (stats.roundHistory || []).map((r) => ({ score: r.score }));
+  const roundsForCalc = roundHistory.map((r) => ({ score: r.score }));
   const handicapHistory = calculateHandicapHistory(roundsForCalc);
   const averageHistory = calculateAverageHistory(roundsForCalc);
 
   // Transform for trend charts (use last 15 rounds for display)
-  const trendChartData = (stats.roundHistory || [])
+  const trendChartData = roundHistory
     .slice(-15)
     .map((round, index) => {
-      const originalIndex = Math.max(0, (stats.roundHistory?.length || 0) - 15) + index;
+      const originalIndex = Math.max(0, roundHistory.length - 15) + index;
       return {
         date: format(parseISO(round.date), 'M/d'),
         handicap: handicapHistory[originalIndex],
@@ -140,7 +123,7 @@ export default function StatsPage({ loaderData }: Route.ComponentProps) {
   // Check if we have enough data for trend charts
   const hasHandicapTrendData = trendChartData.some((d) => d.handicap !== null);
   const hasAverageTrendData = trendChartData.length > 0;
-  const roundCount = stats.roundHistory?.length || 0;
+  const roundCount = roundHistory.length;
 
   return (
     <PageContainer>
@@ -155,75 +138,17 @@ export default function StatsPage({ loaderData }: Route.ComponentProps) {
         className="mb-6"
       />
 
-      {/* 최근 스코어 추이 - Line Chart with Labels */}
-      {lineChartData.length > 0 && (
+      {/* 최근 스코어 추이 - 공통 컴포넌트 사용 */}
+      {stats.roundHistory && stats.roundHistory.length > 0 && (
         <Card className="mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">스코어 추이</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={scoreChartConfig} className="h-[220px] w-full">
-              <LineChart
-                data={lineChartData}
-                margin={{ top: 20, right: 10, left: -10, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                  domain={['dataMin - 3', 'dataMax + 3']}
-                  tickFormatter={(value) => (value > 0 ? `+${value}` : String(value))}
-                  width={30}
-                />
-                <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
-                <ChartTooltip
-                  content={({ active, payload, label }) => (
-                    <ChartTooltipContent
-                      active={active}
-                      payload={payload}
-                      label={label}
-                      labelFormatter={(lbl, pl) => {
-                        if (pl && pl[0]) {
-                          const data = pl[0].payload as { fullDate: string };
-                          return format(parseISO(data.fullDate), 'yyyy년 M월 d일');
-                        }
-                        return lbl;
-                      }}
-                    />
-                  )}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="score"
-                  stroke="#f97316"
-                  strokeWidth={2}
-                  dot={{ fill: '#f97316', strokeWidth: 0, r: 4 }}
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#ea580c' }}
-                  connectNulls
-                >
-                  <LabelList
-                    dataKey="score"
-                    position="top"
-                    offset={8}
-                    fontSize={9}
-                    fill="#6b7280"
-                    formatter={formatScoreForLabel}
-                  />
-                </Line>
-              </LineChart>
-            </ChartContainer>
-            <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-              <span>0 = 파(Par)</span>
-              <span>- = 언더파</span>
-              <span>+ = 오버파</span>
-            </div>
+            <ScoreTrendChart
+              roundHistory={stats.roundHistory}
+              height={220}
+            />
           </CardContent>
         </Card>
       )}

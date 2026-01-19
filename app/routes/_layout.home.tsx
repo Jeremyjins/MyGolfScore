@@ -8,60 +8,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { GolfIcon } from '~/components/ui/icons';
 import { StatsCards } from '~/components/stats/stats-cards';
-import { format, parseISO } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from '~/components/ui/chart';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ReferenceLine,
-  LabelList,
-} from 'recharts';
 import { ScoreDistributionChart } from '~/components/charts/score-distribution-chart';
+import { ScoreTrendChart } from '~/components/charts/score-trend-chart';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export { loader } from '~/loaders/home.server';
-
-// Chart configuration
-const scoreChartConfig: ChartConfig = {
-  score: {
-    label: '스코어',
-    color: '#f97316', // orange-500
-  },
-};
-
-// Format score for label display
-const formatScoreForLabel = (value: unknown) => {
-  if (value === undefined || value === null) return '';
-  const num = typeof value === 'string' ? parseFloat(value) : Number(value);
-  if (isNaN(num)) return '';
-  return num > 0 ? `+${num}` : String(num);
-};
 
 export default function HomePage({ loaderData }: Route.ComponentProps) {
   const { userName, recentRounds, stats } = loaderData;
 
-  // Transform roundHistory for line chart
-  const lineChartData = (stats.roundHistory || []).map((round) => ({
-    date: format(parseISO(round.date), 'M/d'),
-    score: round.score,
-    totalStrokes: round.totalStrokes,
-    fullDate: round.date,
-  }));
-
   // Calculate average score from roundHistory (par-relative)
-  const averageScoreToPar = lineChartData.length > 0
-    ? Math.round(lineChartData.reduce((sum, r) => sum + r.score, 0) / lineChartData.length)
+  const roundHistory = stats.roundHistory || [];
+  const averageScoreToPar = roundHistory.length > 0
+    ? Math.round(roundHistory.reduce((sum: number, r: { score: number }) => sum + r.score, 0) / roundHistory.length)
     : null;
 
-  const roundCount = stats.roundHistory?.length || 0;
+  const roundCount = roundHistory.length;
 
   return (
     <PageContainer>
@@ -107,75 +70,17 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
         totalRounds={stats.totalRounds}
       />
 
-      {/* 최근 스코어 추이 - Line Chart with Labels */}
-      {lineChartData.length > 0 && (
+      {/* 스코어 추이 - 공통 컴포넌트 사용 */}
+      {roundHistory.length > 0 && (
         <Card className="mb-4">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">최근 성적</CardTitle>
+            <CardTitle className="text-base">스코어 추이</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={scoreChartConfig} className="h-[160px] w-full">
-              <LineChart
-                data={lineChartData}
-                margin={{ top: 20, right: 10, left: -10, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                  domain={['dataMin - 3', 'dataMax + 3']}
-                  tickFormatter={(value) => (value > 0 ? `+${value}` : String(value))}
-                  width={30}
-                />
-                <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
-                <ChartTooltip
-                  content={({ active, payload, label }) => (
-                    <ChartTooltipContent
-                      active={active}
-                      payload={payload}
-                      label={label}
-                      labelFormatter={(lbl, pl) => {
-                        if (pl && pl[0]) {
-                          const data = pl[0].payload as { fullDate: string };
-                          return format(parseISO(data.fullDate), 'yyyy년 M월 d일');
-                        }
-                        return lbl;
-                      }}
-                    />
-                  )}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="score"
-                  stroke="#f97316"
-                  strokeWidth={2}
-                  dot={{ fill: '#f97316', strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 5, strokeWidth: 0, fill: '#ea580c' }}
-                  connectNulls
-                >
-                  <LabelList
-                    dataKey="score"
-                    position="top"
-                    offset={8}
-                    fontSize={9}
-                    fill="#6b7280"
-                    formatter={formatScoreForLabel}
-                  />
-                </Line>
-              </LineChart>
-            </ChartContainer>
-            <div className="flex justify-center gap-4 mt-1 text-xs text-muted-foreground">
-              <span>0 = 파</span>
-              <span>- = 언더</span>
-              <span>+ = 오버</span>
-            </div>
+            <ScoreTrendChart
+              roundHistory={roundHistory}
+              height={180}
+            />
           </CardContent>
         </Card>
       )}

@@ -22,8 +22,8 @@ interface ScoreInputSheetProps {
   scoreDisplayMode?: ScoreDisplayMode;
 }
 
-// 고정된 diff 옵션 (-2 ~ +3)
-const FIXED_DIFF_OPTIONS = [-2, -1, 0, 1, 2, 3] as const;
+// 고정된 diff 옵션 (-1 ~ +4)
+const FIXED_DIFF_OPTIONS = [-1, 0, 1, 2, 3, 4] as const;
 
 // diff에 따른 라벨 반환
 function getDiffLabel(diff: number): string {
@@ -224,7 +224,7 @@ export function ScoreInputSheet({
 
           {/* 고정 스코어 버튼 그리드 (2행 3열) */}
           <div className="space-y-2">
-            {/* 상단 행: -2, -1, 0 */}
+            {/* 상단 행: -1, 0, +1 (버디, 파, 보기) */}
             <div className="grid grid-cols-3 gap-2">
               {FIXED_DIFF_OPTIONS.slice(0, 3).map((diff) => {
                 const score = diffToScore(diff);
@@ -253,7 +253,7 @@ export function ScoreInputSheet({
               })}
             </div>
 
-            {/* 하단 행: +1, +2, +3 */}
+            {/* 하단 행: +2, +3, +4 (더블보기, 트리플보기, 쿼드러플보기) */}
             <div className="grid grid-cols-3 gap-2">
               {FIXED_DIFF_OPTIONS.slice(3, 6).map((diff) => {
                 const score = diffToScore(diff);
