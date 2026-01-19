@@ -166,7 +166,7 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="fixed safe-bottom left-0 right-0 p-4 pb-safe bg-background border-t">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background border-t">
         <Button
           onClick={handleSubmit}
           disabled={!selectedCourseId || fetcher.state !== 'idle'}
