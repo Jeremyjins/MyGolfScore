@@ -110,7 +110,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         .eq('status', 'completed')
         .eq('round_players.is_owner', true)
         .order('play_date', { ascending: true })
-        .limit(10), // Home에서는 최근 10개만
+        .limit(50), // stats와 동일한 데이터 제공
     ]);
 
     if (statsResult.error) {
