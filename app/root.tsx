@@ -21,14 +21,31 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap",
   },
+  // PWA manifest
+  { rel: "manifest", href: "/manifest.json" },
+  // Apple Touch Icon (Safari 홈화면 추가용)
+  { rel: "apple-touch-icon", href: "/images/app_logo.png" },
+  { rel: "apple-touch-icon", sizes: "180x180", href: "/images/app_logo.png" },
+  { rel: "apple-touch-icon", sizes: "152x152", href: "/images/app_logo.png" },
+  { rel: "apple-touch-icon", sizes: "120x120", href: "/images/app_logo.png" },
+  // Favicon
+  { rel: "icon", type: "image/png", href: "/images/app_logo.png" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* PWA 메타 태그 */}
+        <meta name="theme-color" content="#000000" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="My Score" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="My Score" />
+        <meta name="msapplication-TileColor" content="#000000" />
         <Meta />
         <Links />
       </head>

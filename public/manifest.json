@@ -1,6 +1,6 @@
 {
-  "name": "My Golf Score",
-  "short_name": "My Golf",
+  "name": "My Golf Score App",
+  "short_name": "My Score",
   "description": "나의 라운딩을 기록합니다.",
   "start_url": "/",
   "display": "standalone",
