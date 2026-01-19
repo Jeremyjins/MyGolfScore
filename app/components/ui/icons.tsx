@@ -12,6 +12,7 @@ import {
   Home,
   Info,
   LogOut,
+  MapPin,
   Plus,
   Settings,
   Star,
@@ -37,6 +38,7 @@ export const GolfIcon = Flag; // Using Flag as Golf substitute
 export const HomeIcon = Home;
 export const InfoIcon = Info;
 export const LogOutIcon = LogOut;
+export const MapPinIcon = MapPin;
 export const PlusIcon = Plus;
 export const SettingsIcon = Settings;
 export const StarIcon = Star;

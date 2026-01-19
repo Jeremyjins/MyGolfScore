@@ -30,12 +30,13 @@ import {
 import { ScoreInputSheet } from '~/components/score/score-input-sheet';
 import { DatePicker } from '~/components/ui/date-picker';
 import { TimePicker } from '~/components/ui/time-picker';
-import { ArrowLeftIcon, CheckCircleIcon, CheckIcon, CalendarIcon, ClockIcon } from '~/components/ui/icons';
+import { ArrowLeftIcon, CheckCircleIcon, CheckIcon, CalendarIcon, ClockIcon, MapPinIcon } from '~/components/ui/icons';
+import { CourseCard } from '~/components/course/course-card';
 import { formatScoreToPar } from '~/lib/score-utils';
 import { cn } from '~/lib/utils';
 import { format, parse } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
+import type { HoleInfo, PlayerScore, RoundDetail, Course } from '~/types';
 
 export { loader, action } from '~/loaders/round.server';
 
@@ -43,8 +44,8 @@ const STORAGE_KEY_PREFIX = 'round_scores_';
 const SCORE_MODE_KEY = 'score_display_mode';
 
 export default function RoundPage({ loaderData }: Route.ComponentProps) {
-  const { round } = loaderData as { round: RoundDetail; userName: string };
-  const fetcher = useFetcher<{ success?: boolean; completed?: boolean }>();
+  const { round, courses } = loaderData as { round: RoundDetail; userName: string; courses: Course[] };
+  const fetcher = useFetcher<{ success?: boolean; completed?: boolean; courseUpdated?: boolean }>();
   const navigate = useNavigate();
 
   const [players, setPlayers] = useState<PlayerScore[]>(round.players);
@@ -60,6 +61,12 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     round.playDate ? parse(round.playDate, 'yyyy-MM-dd', new Date()) : new Date()
   );
   const [editTeeTime, setEditTeeTime] = useState<string>(round.teeTime || '');
+
+  // 코스 편집 상태
+  const [courseSheet, setCourseSheet] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(
+    round.course?.id || null
+  );
 
   // 스코어 표시 모드: stroke (타수) / par (파 대비)
   const [scoreDisplayMode, setScoreDisplayMode] = useState<ScoreDisplayMode>(() => {
@@ -131,6 +138,13 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     }
   }, [fetcher.data, navigate, round.id, storageKey]);
 
+  // 코스 변경 후 페이지 새로고침 (새 코스 정보 반영)
+  useEffect(() => {
+    if (fetcher.data?.courseUpdated) {
+      navigate(0); // 페이지 새로고침
+    }
+  }, [fetcher.data?.courseUpdated, navigate]);
+
   const handleCellClick = (playerId: string, holeNumber: number) => {
     setInputSheet({ open: true, playerId, holeNumber });
   };
@@ -179,6 +193,18 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
       { method: 'POST' }
     );
     setDateTimeSheet(false);
+  };
+
+  const handleCourseSave = () => {
+    if (!selectedCourseId) return;
+    fetcher.submit(
+      {
+        intent: 'updateCourse',
+        courseId: selectedCourseId,
+      },
+      { method: 'POST' }
+    );
+    setCourseSheet(false);
   };
 
   // 현재 선택된 홀 정보
@@ -234,10 +260,17 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
               <ArrowLeftIcon className="w-5 h-5" />
             </Button>
           </Link>
-          <div className="text-center">
-            <h1 className="font-semibold text-sm">
-              {round.course?.name || '코스 미지정'}
-            </h1>
+          <button
+            onClick={() => setCourseSheet(true)}
+            className="text-center hover:bg-accent/50 px-2 py-1 rounded-md transition-colors"
+          >
+            <div className="flex items-center justify-center gap-1">
+              <MapPinIcon className="w-3.5 h-3.5 text-muted-foreground" />
+              <h1 className="font-semibold text-sm">
+                {round.course?.name || '코스 미지정'}
+              </h1>
+              <span className="text-[10px] text-muted-foreground">(수정)</span>
+            </div>
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <span>Par {totalPar}</span>
               {/* 자동 저장 인디케이터 */}
@@ -251,7 +284,7 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
                 </span>
               )}
             </div>
-          </div>
+          </button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -461,6 +494,64 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
                 disabled={fetcher.state !== 'idle'}
               >
                 저장
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* 코스 수정 시트 */}
+      <Sheet open={courseSheet} onOpenChange={setCourseSheet}>
+        <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+          <SheetHeader className="pb-4">
+            <SheetTitle>골프 코스 변경</SheetTitle>
+            <SheetDescription>
+              다른 코스를 선택하세요
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-4">
+            {courses.length === 0 ? (
+              <div className="py-6 text-center">
+                <p className="text-muted-foreground mb-3">
+                  등록된 코스가 없습니다
+                </p>
+                <Link to="/courses">
+                  <Button variant="outline" size="sm">
+                    코스 등록하기
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pt-4">
+                {courses.map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    selected={selectedCourseId === course.id}
+                    onClick={() => setSelectedCourseId(course.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCourseSheet(false);
+                  setSelectedCourseId(round.course?.id || null);
+                }}
+                className="flex-1"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleCourseSave}
+                className="flex-1"
+                disabled={fetcher.state !== 'idle' || !selectedCourseId || selectedCourseId === round.course?.id}
+              >
+                변경
               </Button>
             </div>
           </div>

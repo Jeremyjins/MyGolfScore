@@ -324,7 +324,7 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
             </Link>
           </div>
           <div className="space-y-4">
-            {recentRounds.slice(0, 3).map((round: any) => (
+            {recentRounds.map((round: any) => (
               <Link key={round.id} to={`/history/${round.id}`}>
                 <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
                   <CardContent className="flex items-center justify-between py-3">
@@ -333,7 +333,7 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
                         {round.course?.name || '코스 미지정'}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(round.play_date), 'M월 d일 (E)', {
+                        {format(new Date(round.play_date), 'yyyy년 M월 d일 (E)', {
                           locale: ko,
                         })}
                         {round.tee_time && ` ${round.tee_time.slice(0, 5)}`}

@@ -2,7 +2,7 @@
 import type { Route } from '../routes/+types/round.$id';
 import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
-import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
+import type { Course, HoleInfo, PlayerScore, RoundDetail } from '~/types';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const session = requireAuth(request);
@@ -11,26 +11,38 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const env = getEnvFromContext(context);
   const supabase = getSupabase(env);
 
-  const { data: round, error: roundError } = await supabase
-    .from('rounds')
-    .select(
+  // 라운드 정보와 사용자의 코스 목록을 병렬로 가져오기
+  const [roundResult, coursesResult] = await Promise.all([
+    supabase
+      .from('rounds')
+      .select(
+        `
+        *,
+        course:courses(*),
+        round_players(
+          id,
+          player_order,
+          user_id,
+          companion_id,
+          total_score,
+          score_to_par,
+          companion:companions(name)
+        )
       `
-      *,
-      course:courses(*),
-      round_players(
-        id,
-        player_order,
-        user_id,
-        companion_id,
-        total_score,
-        score_to_par,
-        companion:companions(name)
       )
-    `
-    )
-    .eq('id', id)
-    .eq('user_id', session.userId)
-    .single();
+      .eq('id', id)
+      .eq('user_id', session.userId)
+      .single(),
+    supabase
+      .from('courses')
+      .select('*')
+      .eq('user_id', session.userId)
+      .order('is_favorite', { ascending: false })
+      .order('name'),
+  ]);
+
+  const { data: round, error: roundError } = roundResult;
+  const { data: courses } = coursesResult;
 
   if (roundError || !round) {
     // Log error for debugging
@@ -86,7 +98,18 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     players,
   };
 
-  return { round: roundDetail, userName: session.userName };
+  // Transform courses data to match Course type
+  const transformedCourses: Course[] = (courses ?? []).map((c) => ({
+    id: c.id,
+    user_id: c.user_id,
+    name: c.name,
+    holes: c.holes as unknown as HoleInfo[],
+    is_favorite: c.is_favorite ?? false,
+    created_at: c.created_at ?? '',
+    updated_at: c.updated_at ?? '',
+  }));
+
+  return { round: roundDetail, userName: session.userName, courses: transformedCourses };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
@@ -183,6 +206,34 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .eq('user_id', session.userId);
 
       return { success: true };
+    }
+
+    case 'updateCourse': {
+      const courseId = formData.get('courseId') as string;
+
+      if (!courseId) {
+        return { error: '코스를 선택하세요.' };
+      }
+
+      // 코스가 사용자의 것인지 확인
+      const { data: course } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('id', courseId)
+        .eq('user_id', session.userId)
+        .single();
+
+      if (!course) {
+        return { error: '유효하지 않은 코스입니다.' };
+      }
+
+      await supabase
+        .from('rounds')
+        .update({ course_id: courseId })
+        .eq('id', id)
+        .eq('user_id', session.userId);
+
+      return { success: true, courseUpdated: true };
     }
   }
 

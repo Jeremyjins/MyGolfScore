@@ -24,13 +24,13 @@ export function CourseCard({
   return (
     <Card
       className={cn(
-        'transition-all cursor-pointer',
+        'transition-all cursor-pointer py-2 mb-2',
         selected && 'ring-2 ring-primary',
         onClick && 'hover:bg-accent/50'
       )}
       onClick={onClick}
     >
-      <CardContent className="flex items-center justify-between py-3">
+      <CardContent className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {onFavoriteToggle && (
             <button

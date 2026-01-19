@@ -90,7 +90,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         `)
         .eq('user_id', userId)
         .order('play_date', { ascending: false })
-        .limit(5),
+        .limit(10),
       supabase.rpc('get_user_stats', { p_user_id: userId }),
       // 차트용 라운드 히스토리 쿼리
       supabase
