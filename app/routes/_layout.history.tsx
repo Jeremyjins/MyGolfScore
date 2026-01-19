@@ -64,7 +64,7 @@ export default function HistoryPage({ loaderData }: Route.ComponentProps) {
               <div className="space-y-2">
                 {monthRounds.map((round) => (
                   <Link key={round.id} to={`/history/${round.id}`}>
-                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2">
+                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
                       <CardContent className="flex items-center justify-between py-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">

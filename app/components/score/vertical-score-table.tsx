@@ -42,7 +42,7 @@ export function VerticalScoreTable({
     }
     // Par mode: show relative to par
     const diff = score - par;
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };
@@ -90,7 +90,7 @@ export function VerticalScoreTable({
       return String(total);
     }
     const diff = total - par;
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };
@@ -222,7 +222,7 @@ export function FullVerticalScoreTable({
       return String(score);
     }
     const diff = score - par;
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };
@@ -253,7 +253,7 @@ export function FullVerticalScoreTable({
       return String(total);
     }
     const diff = total - par;
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };

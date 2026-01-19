@@ -8,7 +8,7 @@ export function calculateToPar(strokes: number, par: number): number {
 
 // 스코어 표시 텍스트 (Par 모드)
 export function formatScoreToPar(toPar: number): string {
-  if (toPar === 0) return 'E';
+  if (toPar === 0) return '0';
   if (toPar > 0) return `+${toPar}`;
   return `${toPar}`;
 }

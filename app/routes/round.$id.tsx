@@ -17,13 +17,24 @@ import {
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '~/components/ui/sheet';
+import {
   VerticalScoreTable,
   type ScoreDisplayMode,
 } from '~/components/score/vertical-score-table';
 import { ScoreInputSheet } from '~/components/score/score-input-sheet';
-import { ArrowLeftIcon, CheckCircleIcon, CheckIcon } from '~/components/ui/icons';
+import { DatePicker } from '~/components/ui/date-picker';
+import { TimePicker } from '~/components/ui/time-picker';
+import { ArrowLeftIcon, CheckCircleIcon, CheckIcon, CalendarIcon, ClockIcon } from '~/components/ui/icons';
 import { formatScoreToPar } from '~/lib/score-utils';
 import { cn } from '~/lib/utils';
+import { format, parse } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
 
 export { loader, action } from '~/loaders/round.server';
@@ -42,6 +53,13 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     playerId: string;
     holeNumber: number;
   }>({ open: false, playerId: '', holeNumber: 1 });
+
+  // 날짜/시간 편집 상태
+  const [dateTimeSheet, setDateTimeSheet] = useState(false);
+  const [editPlayDate, setEditPlayDate] = useState<Date>(
+    round.playDate ? parse(round.playDate, 'yyyy-MM-dd', new Date()) : new Date()
+  );
+  const [editTeeTime, setEditTeeTime] = useState<string>(round.teeTime || '');
 
   // 스코어 표시 모드: stroke (타수) / par (파 대비)
   const [scoreDisplayMode, setScoreDisplayMode] = useState<ScoreDisplayMode>(() => {
@@ -151,6 +169,18 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     fetcher.submit({ intent: 'completeRound' }, { method: 'POST' });
   };
 
+  const handleDateTimeSave = () => {
+    fetcher.submit(
+      {
+        intent: 'updateRoundInfo',
+        playDate: format(editPlayDate, 'yyyy-MM-dd'),
+        teeTime: editTeeTime,
+      },
+      { method: 'POST' }
+    );
+    setDateTimeSheet(false);
+  };
+
   // 현재 선택된 홀 정보
   const currentHole = holes.find((h) => h.hole === inputSheet.holeNumber);
   const currentPlayer = players.find((p) => p.id === inputSheet.playerId);
@@ -176,6 +206,22 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
   const getPlayerColor = (index: number) => {
     const colors = ['bg-primary', 'bg-orange-500', 'bg-purple-500', 'bg-teal-500'];
     return colors[index] || 'bg-gray-500';
+  };
+
+  // 날짜/시간 포맷
+  const formatPlayDate = () => {
+    if (!round.playDate) return '날짜 미설정';
+    const date = parse(round.playDate, 'yyyy-MM-dd', new Date());
+    return format(date, 'M월 d일 (EEE)', { locale: ko });
+  };
+
+  const formatTeeTime = () => {
+    if (!round.teeTime) return '';
+    const [h, m] = round.teeTime.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour < 12 ? '오전' : '오후';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${ampm} ${displayHour}시 ${m}분`;
   };
 
   return (
@@ -230,6 +276,27 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
           </AlertDialog>
         </div>
       </div>
+
+      {/* 날짜/시간 표시 (클릭하여 수정) */}
+      <button
+        onClick={() => setDateTimeSheet(true)}
+        className="w-full px-4 py-2.5 flex items-center justify-center gap-3 bg-muted/30 hover:bg-muted/50 transition-colors border-b"
+      >
+        <div className="flex items-center gap-1.5 text-sm">
+          <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+          <span>{formatPlayDate()}</span>
+        </div>
+        {round.teeTime && (
+          <>
+            <span className="text-muted-foreground">·</span>
+            <div className="flex items-center gap-1.5 text-sm">
+              <ClockIcon className="w-4 h-4 text-muted-foreground" />
+              <span>{formatTeeTime()}</span>
+            </div>
+          </>
+        )}
+        <span className="text-xs text-muted-foreground ml-1">(수정)</span>
+      </button>
 
       {/* 스코어 요약 */}
       <Card className="mx-4 mt-4">
@@ -346,6 +413,59 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
           scoreDisplayMode={scoreDisplayMode}
         />
       )}
+
+      {/* 날짜/시간 수정 시트 */}
+      <Sheet open={dateTimeSheet} onOpenChange={setDateTimeSheet}>
+        <SheetContent side="bottom" className="h-auto">
+          <SheetHeader className="pb-4">
+            <SheetTitle>날짜 & 시간 수정</SheetTitle>
+            <SheetDescription>
+              라운드 날짜와 티오프 시간을 수정하세요
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                날짜
+              </label>
+              <DatePicker
+                value={editPlayDate}
+                onChange={(date) => date && setEditPlayDate(date)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <ClockIcon className="w-4 h-4" />
+                티오프 시간 (선택)
+              </label>
+              <TimePicker
+                value={editTeeTime}
+                onChange={(time) => setEditTeeTime(time)}
+                placeholder="시간을 선택하세요"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setDateTimeSheet(false)}
+                className="flex-1"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleDateTimeSave}
+                className="flex-1"
+                disabled={fetcher.state !== 'idle'}
+              >
+                저장
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -28,8 +28,8 @@ describe('score-utils', () => {
       expect(formatScoreToPar(-10)).toBe('-10');
     });
 
-    it('should format even par as E', () => {
-      expect(formatScoreToPar(0)).toBe('E');
+    it('should format even par as 0', () => {
+      expect(formatScoreToPar(0)).toBe('0');
     });
   });
 

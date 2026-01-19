@@ -22,50 +22,19 @@ interface ScoreInputSheetProps {
   scoreDisplayMode?: ScoreDisplayMode;
 }
 
-interface ScoreOption {
-  score: number;
-  diff: number;
-  label: string;
-}
+// 고정된 diff 옵션 (-2 ~ +3)
+const FIXED_DIFF_OPTIONS = [-2, -1, 0, 1, 2, 3] as const;
 
-// Par별 스코어 옵션 생성
-function getScoreOptionsForPar(par: number): ScoreOption[] {
-  if (par === 3) {
-    // Par 3: 홀인원(-2) ~ 더블파(+3)
-    return [
-      { score: 1, diff: -2, label: '홀인원' },
-      { score: 2, diff: -1, label: '버디' },
-      { score: 3, diff: 0, label: '파' },
-      { score: 4, diff: 1, label: '보기' },
-      { score: 5, diff: 2, label: '더블보기' },
-      { score: 6, diff: 3, label: '더블파' },
-    ];
-  } else if (par === 4) {
-    // Par 4: 알바트로스(-3) ~ 더블파(+4)
-    return [
-      { score: 1, diff: -3, label: '알바트로스' },
-      { score: 2, diff: -2, label: '이글' },
-      { score: 3, diff: -1, label: '버디' },
-      { score: 4, diff: 0, label: '파' },
-      { score: 5, diff: 1, label: '보기' },
-      { score: 6, diff: 2, label: '더블보기' },
-      { score: 7, diff: 3, label: '트리플보기' },
-      { score: 8, diff: 4, label: '더블파' },
-    ];
-  } else {
-    // Par 5: 알바트로스(-3) ~ 더블파(+5)
-    return [
-      { score: 2, diff: -3, label: '알바트로스' },
-      { score: 3, diff: -2, label: '이글' },
-      { score: 4, diff: -1, label: '버디' },
-      { score: 5, diff: 0, label: '파' },
-      { score: 6, diff: 1, label: '보기' },
-      { score: 7, diff: 2, label: '더블보기' },
-      { score: 8, diff: 3, label: '트리플보기' },
-      { score: 9, diff: 4, label: '쿼드러플보기' },
-      { score: 10, diff: 5, label: '더블파' },
-    ];
-  }
+// diff에 따른 라벨 반환
+function getDiffLabel(diff: number): string {
+  if (diff <= -2) return '이글';
+  if (diff === -1) return '버디';
+  if (diff === 0) return '파';
+  if (diff === 1) return '보기';
+  if (diff === 2) return '더블보기';
+  if (diff === 3) return '트리플보기';
+  if (diff === 4) return '쿼드러플보기';
+  return `+${diff}`;
 }
 
 // 스코어에 따른 라벨 반환 (커스텀 스코어용)
@@ -111,14 +80,27 @@ export function ScoreInputSheet({
     }
   }, [open, currentScore, par]);
 
-  const scoreOptions = getScoreOptionsForPar(par);
+  // diff를 실제 스코어로 변환
+  const diffToScore = (diff: number) => par + diff;
 
-  // 버튼에 표시할 숫자 (파 대비 or 타수)
-  const getButtonDisplay = (diff: number, score: number) => {
+  // 버튼에 표시할 텍스트 (파 대비 or 타수)
+  const getButtonDisplay = (diff: number) => {
     if (scoreDisplayMode === 'stroke') {
-      return String(score);
+      return String(diffToScore(diff));
     }
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
+    if (diff > 0) return `+${diff}`;
+    return String(diff);
+  };
+
+  // 현재 스코어 표시 (상단 영역용)
+  const getCurrentScoreDisplay = () => {
+    if (selectedScore === null) return '-';
+    const diff = selectedScore - par;
+    if (scoreDisplayMode === 'stroke') {
+      return String(selectedScore);
+    }
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };
@@ -154,15 +136,26 @@ export function ScoreInputSheet({
     }
   };
 
+  // diff 버튼 클릭 핸들러
+  const handleDiffSelect = (diff: number) => {
+    const score = diffToScore(diff);
+    if (score >= 1) {
+      setSelectedScore(score);
+    }
+  };
+
   // 현재 선택된 스코어의 diff 계산
   const currentDiff = selectedScore !== null ? selectedScore - par : 0;
   const currentLabel = selectedScore !== null
     ? getScoreLabelForCustom(selectedScore, par)
     : '';
 
-  // 선택된 스코어가 옵션에 있는지 확인
+  // 선택된 스코어가 고정 옵션에 있는지 확인
   const isCustomScore = selectedScore !== null &&
-    !scoreOptions.some(opt => opt.score === selectedScore);
+    !FIXED_DIFF_OPTIONS.some(diff => diffToScore(diff) === selectedScore);
+
+  // 버튼 비활성화 여부 (스코어가 1 미만이 되는 경우)
+  const isDiffDisabled = (diff: number) => diffToScore(diff) < 1;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -177,35 +170,14 @@ export function ScoreInputSheet({
         </SheetHeader>
 
         <div className="space-y-5">
-          {/* 스코어 버튼 그리드 */}
-          <div className="grid grid-cols-3 gap-2">
-            {scoreOptions.map((option) => (
-              <button
-                key={option.score}
-                onClick={() => setSelectedScore(option.score)}
-                className={cn(
-                  'h-16 rounded-xl flex flex-col items-center justify-center transition-all',
-                  getScoreColor(option.diff, selectedScore === option.score)
-                )}
-              >
-                <span className="text-lg font-bold">
-                  {getButtonDisplay(option.diff, option.score)}
-                </span>
-                <span className="text-[11px] opacity-90 font-medium">
-                  {option.label}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* 선택된 스코어 표시 + 미세 조정 */}
+          {/* 현재 스코어 표시 + 미세 조정 (상단) */}
           <div className="bg-muted/50 rounded-xl p-4">
             <div className="flex items-center justify-between">
               {/* - 버튼 */}
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 rounded-full text-xl font-bold"
+                className="h-14 w-14 rounded-full text-2xl font-bold"
                 onClick={() => handleAdjust(-1)}
                 disabled={selectedScore !== null && selectedScore <= 1}
               >
@@ -218,15 +190,15 @@ export function ScoreInputSheet({
                   'inline-flex flex-col items-center px-6 py-2 rounded-xl',
                   isCustomScore ? 'bg-orange-500/10' : ''
                 )}>
-                  <span className="text-3xl font-bold">
-                    {selectedScore ?? '-'}타
-                  </span>
                   <span className={cn(
-                    'text-sm font-medium',
+                    'text-4xl font-bold',
                     currentDiff < 0 ? 'text-red-500' :
                     currentDiff === 0 ? 'text-green-600' : 'text-blue-600'
                   )}>
-                    {currentDiff > 0 ? '+' : ''}{currentDiff} ({currentLabel})
+                    {getCurrentScoreDisplay()}
+                  </span>
+                  <span className="text-sm text-muted-foreground mt-1">
+                    {selectedScore ?? '-'}타 · {currentLabel}
                   </span>
                 </div>
               </div>
@@ -235,7 +207,7 @@ export function ScoreInputSheet({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 rounded-full text-xl font-bold"
+                className="h-14 w-14 rounded-full text-2xl font-bold"
                 onClick={() => handleAdjust(1)}
                 disabled={selectedScore !== null && selectedScore >= 20}
               >
@@ -248,6 +220,67 @@ export function ScoreInputSheet({
                 기본 옵션 외 스코어
               </p>
             )}
+          </div>
+
+          {/* 고정 스코어 버튼 그리드 (2행 3열) */}
+          <div className="space-y-2">
+            {/* 상단 행: -2, -1, 0 */}
+            <div className="grid grid-cols-3 gap-2">
+              {FIXED_DIFF_OPTIONS.slice(0, 3).map((diff) => {
+                const score = diffToScore(diff);
+                const isSelected = selectedScore === score;
+                const disabled = isDiffDisabled(diff);
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => handleDiffSelect(diff)}
+                    disabled={disabled}
+                    className={cn(
+                      'h-16 rounded-xl flex flex-col items-center justify-center transition-all',
+                      disabled
+                        ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
+                        : getScoreColor(diff, isSelected)
+                    )}
+                  >
+                    <span className="text-lg font-bold">
+                      {getButtonDisplay(diff)}
+                    </span>
+                    <span className="text-[11px] opacity-90 font-medium">
+                      {getDiffLabel(diff)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 하단 행: +1, +2, +3 */}
+            <div className="grid grid-cols-3 gap-2">
+              {FIXED_DIFF_OPTIONS.slice(3, 6).map((diff) => {
+                const score = diffToScore(diff);
+                const isSelected = selectedScore === score;
+                const disabled = isDiffDisabled(diff);
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => handleDiffSelect(diff)}
+                    disabled={disabled}
+                    className={cn(
+                      'h-16 rounded-xl flex flex-col items-center justify-center transition-all',
+                      disabled
+                        ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
+                        : getScoreColor(diff, isSelected)
+                    )}
+                  >
+                    <span className="text-lg font-bold">
+                      {getButtonDisplay(diff)}
+                    </span>
+                    <span className="text-[11px] opacity-90 font-medium">
+                      {getDiffLabel(diff)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 확인/취소 버튼 */}

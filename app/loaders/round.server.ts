@@ -162,6 +162,28 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 
       return { success: true, completed: true };
     }
+
+    case 'updateRoundInfo': {
+      const playDate = formData.get('playDate') as string;
+      const teeTime = formData.get('teeTime') as string;
+
+      const updateData: { play_date?: string; tee_time?: string | null } = {};
+
+      if (playDate) {
+        updateData.play_date = playDate;
+      }
+
+      // teeTime이 빈 문자열이면 null로 설정
+      updateData.tee_time = teeTime || null;
+
+      await supabase
+        .from('rounds')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', session.userId);
+
+      return { success: true };
+    }
   }
 
   return { error: 'Unknown action' };

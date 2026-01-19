@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useFetcher } from 'react-router';
 import type { Route } from './+types/round.new';
 import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { CourseCard } from '~/components/course/course-card';
 import { CompanionCard } from '~/components/companion/companion-card';
+import { DatePicker } from '~/components/ui/date-picker';
+import { TimePicker } from '~/components/ui/time-picker';
 import { ArrowLeftIcon, CalendarIcon, ClockIcon } from '~/components/ui/icons';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import type { Course, Companion } from '~/types';
 
 export { loader, action } from '~/loaders/round-new.server';
@@ -19,8 +19,8 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher<{ success?: boolean; roundId?: string; error?: string }>();
   const navigate = useNavigate();
 
-  const [playDate, setPlayDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [teeTime, setTeeTime] = useState('');
+  const [playDate, setPlayDate] = useState<Date>(new Date());
+  const [teeTime, setTeeTime] = useState<string>('');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(
     courses.find((c) => c.is_favorite)?.id || courses[0]?.id || null
   );
@@ -52,7 +52,7 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
 
     fetcher.submit(
       {
-        playDate,
+        playDate: format(playDate, 'yyyy-MM-dd'),
         teeTime,
         courseId: selectedCourseId,
         companionIds: JSON.stringify(selectedCompanionIds),
@@ -84,27 +84,24 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="playDate" className="flex items-center gap-2">
+              <label className="text-sm font-medium flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4" />
                 날짜
-              </Label>
-              <Input
-                id="playDate"
-                type="date"
+              </label>
+              <DatePicker
                 value={playDate}
-                onChange={(e) => setPlayDate(e.target.value)}
+                onChange={(date) => date && setPlayDate(date)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="teeTime" className="flex items-center gap-2">
+              <label className="text-sm font-medium flex items-center gap-2">
                 <ClockIcon className="w-4 h-4" />
                 티오프 시간 (선택)
-              </Label>
-              <Input
-                id="teeTime"
-                type="time"
+              </label>
+              <TimePicker
                 value={teeTime}
-                onChange={(e) => setTeeTime(e.target.value)}
+                onChange={(time) => setTeeTime(time)}
+                placeholder="시간을 선택하세요"
               />
             </div>
           </CardContent>
