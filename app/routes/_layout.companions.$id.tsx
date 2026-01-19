@@ -8,7 +8,6 @@ import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -45,11 +44,9 @@ import {
   YAxis,
   CartesianGrid,
   ReferenceLine,
-  BarChart,
-  Bar,
-  Cell,
   LabelList,
 } from 'recharts';
+import { ScoreDistributionChart } from '~/components/charts/score-distribution-chart';
 
 export { loader, action } from '~/loaders/companions-detail.server';
 
@@ -73,36 +70,6 @@ const averageChartConfig: ChartConfig = {
     label: '평균 스코어',
     color: '#3b82f6', // blue-500
   },
-};
-
-const distributionChartConfig: ChartConfig = {
-  count: {
-    label: '횟수',
-    color: '#f97316',
-  },
-};
-
-// Color mapping for score distribution
-const getScoreColor = (name: string) => {
-  const colors: Record<string, string> = {
-    eagle: '#eab308', // yellow-500
-    birdie: '#22c55e', // green-500
-    par: '#3b82f6', // blue-500
-    bogey: '#f97316', // orange-500
-    double: '#ef4444', // red-500
-    triple_plus: '#dc2626', // red-600
-  };
-  return colors[name] || '#f97316';
-};
-
-// Score distribution label mapping
-const distributionLabels: Record<string, string> = {
-  eagle: '이글(-2)',
-  birdie: '버디(-1)',
-  par: '파(0)',
-  bogey: '보기(+1)',
-  double: '더블(+2)',
-  triple_plus: '+3이상',
 };
 
 // Format score for label display
@@ -253,18 +220,6 @@ export default function CompanionDetailPage({
   const hasHandicapTrendData = trendChartData.some((d) => d.handicap !== null);
   const hasAverageTrendData = trendChartData.length > 0;
   const roundCount = stats.roundHistory?.length || 0;
-
-  // Transform scoreDistribution for bar chart
-  const barChartData = [
-    { name: 'eagle', label: distributionLabels.eagle, count: stats.scoreDistribution?.eagle || 0 },
-    { name: 'birdie', label: distributionLabels.birdie, count: stats.scoreDistribution?.birdie || 0 },
-    { name: 'par', label: distributionLabels.par, count: stats.scoreDistribution?.par || 0 },
-    { name: 'bogey', label: distributionLabels.bogey, count: stats.scoreDistribution?.bogey || 0 },
-    { name: 'double', label: distributionLabels.double, count: stats.scoreDistribution?.double || 0 },
-    { name: 'triple_plus', label: distributionLabels.triple_plus, count: stats.scoreDistribution?.triple_plus || 0 },
-  ];
-
-  const hasDistributionData = barChartData.some((d) => d.count > 0);
 
   return (
     <PageContainer>
@@ -620,49 +575,18 @@ export default function CompanionDetailPage({
         </Card>
       )}
 
-      {/* 홀별 스코어 분포 차트 */}
-      {hasDistributionData && (
+      {/* 홀별 스코어 분포 차트 - 공통 컴포넌트 사용 */}
+      {roundCount > 0 && (
         <Card className="mb-4">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">홀별 스코어 분포</CardTitle>
+            <CardTitle className="text-base">스코어 분포 (라운드당 평균)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={distributionChartConfig} className="h-[160px] w-full">
-              <BarChart
-                data={barChartData}
-                margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 9, fill: '#6b7280' }}
-                  interval={0}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                  allowDecimals={false}
-                  width={30}
-                />
-                <ChartTooltip
-                  content={({ active, payload, label }) => (
-                    <ChartTooltipContent
-                      active={active}
-                      payload={payload}
-                      label={label}
-                    />
-                  )}
-                />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {barChartData.map((entry) => (
-                    <Cell key={entry.name} fill={getScoreColor(entry.name)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
+            <ScoreDistributionChart
+              scoreDistribution={stats.scoreDistribution}
+              roundCount={roundCount}
+              height={180}
+            />
           </CardContent>
         </Card>
       )}
@@ -674,7 +598,7 @@ export default function CompanionDetailPage({
           <div className="space-y-2">
             {roundHistory.map((round) => (
               <Link key={round.id} to={`/history/${round.id}`}>
-                <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2">
+                <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
                   <CardContent className="flex items-center justify-between py-3">
                     <div>
                       <p className="font-medium">{round.course_name}</p>
