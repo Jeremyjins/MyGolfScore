@@ -1,15 +1,6 @@
-// TimePicker component with improved mobile-friendly design
+// TimePicker component with native time input for mobile-friendly design
 import * as React from 'react';
-import { ClockIcon } from 'lucide-react';
-
 import { cn } from '~/lib/utils';
-import { Button } from '~/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/components/ui/popover';
-import { ScrollArea } from '~/components/ui/scroll-area';
 
 interface TimePickerProps {
   value?: string; // HH:mm format
@@ -17,157 +8,85 @@ interface TimePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** 빠른 선택 버튼 표시 여부 (기본: true) */
+  showQuickSelect?: boolean;
 }
 
-// Generate time options
-const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-const minutes = ['00', '10', '20', '30', '40', '50'];
+// Quick select time options (common tee-off times in Korea)
+const quickSelectTimes = [
+  { value: '06:00', label: '6:00' },
+  { value: '06:30', label: '6:30' },
+  { value: '07:00', label: '7:00' },
+  { value: '07:30', label: '7:30' },
+  { value: '08:00', label: '8:00' },
+  { value: '08:30', label: '8:30' },
+  { value: '09:00', label: '9:00' },
+  { value: '09:30', label: '9:30' },
+  { value: '10:00', label: '10:00' },
+  { value: '10:30', label: '10:30' },
+  { value: '11:00', label: '11:00' },
+  { value: '11:30', label: '11:30' },
+];
 
 export function TimePicker({
-  value,
+  value = '',
   onChange,
-  placeholder = '시간을 선택하세요',
+  placeholder = '시간 선택',
   disabled = false,
   className,
+  showQuickSelect = true,
 }: TimePickerProps) {
-  const [open, setOpen] = React.useState(false);
-  const [selectedHour, setSelectedHour] = React.useState<string>(
-    value?.split(':')[0] || ''
-  );
-  const [selectedMinute, setSelectedMinute] = React.useState<string>(
-    value?.split(':')[1] || ''
-  );
-
-  // Sync with external value changes
-  React.useEffect(() => {
-    if (value) {
-      const [h, m] = value.split(':');
-      setSelectedHour(h || '');
-      setSelectedMinute(m || '');
-    } else {
-      setSelectedHour('');
-      setSelectedMinute('');
-    }
-  }, [value]);
-
-  const handleHourSelect = (hour: string) => {
-    setSelectedHour(hour);
-    if (selectedMinute) {
-      onChange?.(`${hour}:${selectedMinute}`);
-      setOpen(false);
-    }
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.(e.target.value);
   };
 
-  const handleMinuteSelect = (minute: string) => {
-    setSelectedMinute(minute);
-    if (selectedHour) {
-      onChange?.(`${selectedHour}:${minute}`);
-      setOpen(false);
-    }
-  };
-
-  const formatDisplayTime = () => {
-    if (!value) return null;
-    const [h, m] = value.split(':');
-    const hour = parseInt(h, 10);
-    const ampm = hour < 12 ? '오전' : '오후';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${ampm} ${displayHour}시 ${m}분`;
+  const handleQuickSelect = (time: string) => {
+    onChange?.(time);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            'w-full justify-start text-left font-normal',
-            !value && 'text-muted-foreground',
-            className
-          )}
-        >
-          <ClockIcon className="mr-2 h-4 w-4" />
-          {formatDisplayTime() || placeholder}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <div className="flex">
-          {/* Hour selection */}
-          <div className="border-r">
-            <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
-              시
-            </div>
-            <ScrollArea className="h-56">
-              <div className="p-1">
-                {hours.map((hour) => (
-                  <button
-                    key={hour}
-                    onClick={() => handleHourSelect(hour)}
-                    className={cn(
-                      'w-full px-4 py-2 text-sm rounded-md transition-colors text-center',
-                      selectedHour === hour
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
-                    )}
-                  >
-                    {hour}
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+    <div className={cn('space-y-3', className)}>
+      {/* Native time input - best for mobile */}
+      <input
+        type="time"
+        value={value}
+        onChange={handleTimeChange}
+        disabled={disabled}
+        className={cn(
+          'flex h-12 w-full rounded-md border border-input bg-background px-4 py-2 text-base ring-offset-background',
+          'placeholder:text-muted-foreground',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          // Mobile-friendly: larger touch target, better visibility
+          '[&::-webkit-calendar-picker-indicator]:w-6 [&::-webkit-calendar-picker-indicator]:h-6',
+          '[&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:cursor-pointer',
+          !value && 'text-muted-foreground'
+        )}
+      />
 
-          {/* Minute selection */}
-          <div>
-            <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
-              분
-            </div>
-            <ScrollArea className="h-56">
-              <div className="p-1">
-                {minutes.map((minute) => (
-                  <button
-                    key={minute}
-                    onClick={() => handleMinuteSelect(minute)}
-                    className={cn(
-                      'w-full px-4 py-2 text-sm rounded-md transition-colors text-center',
-                      selectedMinute === minute
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
-                    )}
-                  >
-                    {minute}
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
-
-        {/* Quick select buttons */}
-        <div className="border-t p-2 grid grid-cols-3 gap-1">
-          {['06:00', '07:00', '08:00', '09:00', '10:00', '11:00'].map((time) => (
+      {/* Quick select buttons for common tee-off times */}
+      {showQuickSelect && (
+        <div className="flex flex-wrap gap-1.5">
+          {quickSelectTimes.map((time) => (
             <button
-              key={time}
-              onClick={() => {
-                const [h, m] = time.split(':');
-                setSelectedHour(h);
-                setSelectedMinute(m);
-                onChange?.(time);
-                setOpen(false);
-              }}
+              key={time.value}
+              type="button"
+              onClick={() => handleQuickSelect(time.value)}
+              disabled={disabled}
               className={cn(
-                'px-2 py-1.5 text-xs rounded-md transition-colors',
-                value === time
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/80'
+                'px-3 py-2 text-sm rounded-md transition-colors min-h-[36px] min-w-[52px]',
+                'border border-input',
+                value === time.value
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background hover:bg-muted',
+                disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {time}
+              {time.label}
             </button>
           ))}
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 }
