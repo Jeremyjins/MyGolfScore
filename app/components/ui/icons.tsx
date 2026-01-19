@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle,
   ChevronRight,
+  ChevronsUpDown,
   Clock,
   Edit,
   Flag,
@@ -22,6 +23,7 @@ import {
   Trophy,
   User,
   Users,
+  X,
 } from 'lucide-react';
 
 // Re-export with consistent naming
@@ -31,6 +33,7 @@ export const CalendarCheckIcon = CalendarCheck;
 export const CheckIcon = Check;
 export const CheckCircleIcon = CheckCircle;
 export const ChevronRightIcon = ChevronRight;
+export const ChevronsUpDownIcon = ChevronsUpDown;
 export const ClockIcon = Clock;
 export const DeleteIcon = Trash2;
 export const EditIcon = Edit;
@@ -48,3 +51,4 @@ export const TrendingUpIcon = TrendingUp;
 export const TrophyIcon = Trophy;
 export const UserIcon = User;
 export const UsersIcon = Users;
+export const XIcon = X;

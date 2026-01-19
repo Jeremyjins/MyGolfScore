@@ -4,12 +4,12 @@ import { Link, useNavigate, useFetcher } from 'react-router';
 import type { Route } from './+types/round.new';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { CourseCard } from '~/components/course/course-card';
-import { CompanionCard } from '~/components/companion/companion-card';
+import { CourseCombobox } from '~/components/course/course-combobox';
+import { CompanionMultiSelect } from '~/components/companion/companion-multi-select';
 import { DatePicker } from '~/components/ui/date-picker';
 import { TimePicker } from '~/components/ui/time-picker';
-import { ArrowLeftIcon, CalendarIcon, ClockIcon } from '~/components/ui/icons';
-import { format, parse } from 'date-fns';
+import { ArrowLeftIcon, CalendarIcon, ClockIcon, MapPinIcon, UsersIcon } from '~/components/ui/icons';
+import { format } from 'date-fns';
 import type { Course, Companion } from '~/types';
 
 export { loader, action } from '~/loaders/round-new.server';
@@ -20,7 +20,7 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
 
   const [playDate, setPlayDate] = useState<Date>(new Date());
-  const [teeTime, setTeeTime] = useState<string>('');
+  const [teeTime, setTeeTime] = useState<string>('08:00');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(
     courses.find((c) => c.is_favorite)?.id || courses[0]?.id || null
   );
@@ -35,17 +35,6 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
     }
   }, [fetcher.data?.success, fetcher.data?.roundId, navigate]);
 
-  const handleCompanionToggle = (companionId: string) => {
-    setSelectedCompanionIds((prev) => {
-      if (prev.includes(companionId)) {
-        return prev.filter((id) => id !== companionId);
-      }
-      if (prev.length >= 3) {
-        return prev; // 최대 3명
-      }
-      return [...prev, companionId];
-    });
-  };
 
   const handleSubmit = () => {
     if (!selectedCourseId) return;
@@ -108,11 +97,16 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
         </Card>
 
         {/* 코스 선택 */}
-        <div>
-          <h2 className="font-semibold mb-3">코스 선택</h2>
-          {courses.length === 0 ? (
-            <Card>
-              <CardContent className="py-6 text-center">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MapPinIcon className="w-4 h-4" />
+              코스 선택
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {courses.length === 0 ? (
+              <div className="text-center py-4">
                 <p className="text-muted-foreground mb-3">
                   등록된 코스가 없습니다
                 </p>
@@ -121,33 +115,34 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
                     코스 등록하기
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {courses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  selected={selectedCourseId === course.id}
-                  onClick={() => setSelectedCourseId(course.id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ) : (
+              <CourseCombobox
+                courses={courses}
+                value={selectedCourseId}
+                onChange={setSelectedCourseId}
+                placeholder="코스를 검색하여 선택하세요"
+              />
+            )}
+          </CardContent>
+        </Card>
 
         {/* 동반자 선택 */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">동반자 선택 (최대 3명)</h2>
-            <span className="text-sm text-muted-foreground">
-              {selectedCompanionIds.length}/3
-            </span>
-          </div>
-          {companions.length === 0 ? (
-            <Card>
-              <CardContent className="py-6 text-center">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <UsersIcon className="w-4 h-4" />
+                동반자 선택
+              </CardTitle>
+              <span className="text-sm text-muted-foreground">
+                {selectedCompanionIds.length}/3
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {companions.length === 0 ? (
+              <div className="text-center py-4">
                 <p className="text-muted-foreground mb-3">
                   등록된 동반자가 없습니다
                 </p>
@@ -156,21 +151,18 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
                     동반자 추가하기
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {companions.map((companion) => (
-                <CompanionCard
-                  key={companion.id}
-                  companion={companion}
-                  selected={selectedCompanionIds.includes(companion.id)}
-                  onClick={() => handleCompanionToggle(companion.id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ) : (
+              <CompanionMultiSelect
+                companions={companions}
+                value={selectedCompanionIds}
+                onChange={setSelectedCompanionIds}
+                maxSelection={3}
+                placeholder="동반자를 검색하여 선택하세요"
+              />
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* 하단 버튼 */}

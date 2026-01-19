@@ -14,8 +14,6 @@ interface TimePickerProps {
 
 // Quick select time options (common tee-off times in Korea)
 const quickSelectTimes = [
-  { value: '06:00', label: '6:00' },
-  { value: '06:30', label: '6:30' },
   { value: '07:00', label: '7:00' },
   { value: '07:30', label: '7:30' },
   { value: '08:00', label: '8:00' },
@@ -26,6 +24,11 @@ const quickSelectTimes = [
   { value: '10:30', label: '10:30' },
   { value: '11:00', label: '11:00' },
   { value: '11:30', label: '11:30' },
+  { value: '12:00', label: '12:00' },
+  { value: '12:30', label: '12:30' },
+  { value: '13:00', label: '13:00' },
+  { value: '13:30', label: '13:30' },
+  { value: '14:00', label: '14:00' },
 ];
 
 export function TimePicker({
