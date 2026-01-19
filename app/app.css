@@ -135,3 +135,33 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* iOS Safe Area 유틸리티 클래스 */
+/* sticky/fixed 헤더에 사용 - 상단 safe area만큼 위치 조정 */
+.safe-top {
+  top: env(safe-area-inset-top, 0px);
+}
+
+/* sticky/fixed 하단 요소에 사용 - 하단 safe area만큼 위치 조정 */
+.safe-bottom {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 상단 패딩 추가 (safe area 포함) - 다른 패딩과 함께 사용 */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* 하단 패딩 추가 (safe area 포함) - 다른 패딩과 함께 사용 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* safe area + 추가 패딩이 필요한 경우 (PageContainer 등에서 사용) */
+.pt-safe-4 {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+}
+
+.pb-safe-20 {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+}

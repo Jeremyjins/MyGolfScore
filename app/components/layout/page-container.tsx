@@ -18,8 +18,9 @@ export function PageContainer({
     <main
       className={cn(
         'min-h-screen',
-        !noPadding && 'px-4 pt-4',
-        !noBottomPadding && 'pb-20', // Bottom nav 높이 + 여유
+        !noPadding && 'px-4 pt-safe-4', // iOS safe area + 기본 패딩
+        noPadding && 'pt-safe', // 패딩 없을 때도 safe area 적용
+        !noBottomPadding && 'pb-safe-20', // Bottom nav 높이 + safe area
         className
       )}
     >

@@ -53,7 +53,7 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-background border-b">
+      <div className="sticky safe-top z-10 bg-background border-b pt-safe">
         <div className="flex items-center justify-between px-4 h-14">
           <Link to="/home">
             <Button variant="ghost" size="icon">
@@ -166,7 +166,7 @@ export default function RoundNewPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+      <div className="fixed safe-bottom left-0 right-0 p-4 pb-safe bg-background border-t">
         <Button
           onClick={handleSubmit}
           disabled={!selectedCourseId || fetcher.state !== 'idle'}

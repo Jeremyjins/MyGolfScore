@@ -43,7 +43,7 @@ export function BackHeader({
   return (
     <header
       className={cn(
-        'flex items-center justify-between h-14 -mx-4 px-4 border-b border-border bg-background sticky top-0 z-40',
+        'flex items-center justify-between h-14 -mx-4 px-4 border-b border-border bg-background sticky safe-top z-40 pt-safe',
         className
       )}
     >
