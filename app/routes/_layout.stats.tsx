@@ -3,10 +3,8 @@ import type { Route } from './+types/_layout.stats';
 import { PageContainer } from '~/components/layout/page-container';
 import { Header } from '~/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { TrendingUpIcon, TrophyIcon, InfoIcon } from '~/components/ui/icons';
-import { formatScoreToPar } from '~/lib/score-utils';
 import { ScoreDistributionChart } from '~/components/charts/score-distribution-chart';
+import { StatsCards } from '~/components/stats/stats-cards';
 import {
   ChartContainer,
   ChartTooltip,
@@ -22,11 +20,6 @@ import {
   ReferenceLine,
   LabelList,
 } from 'recharts';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/components/ui/popover';
 import { format, parseISO } from 'date-fns';
 
 export { loader } from '~/loaders/stats.server';
@@ -153,76 +146,14 @@ export default function StatsPage({ loaderData }: Route.ComponentProps) {
     <PageContainer>
       <Header title="통계" subtitle="나의 골프 성적" />
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {/* 핸디캡 카드 with ? 아이콘 */}
-        <Card className="relative">
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <TrendingUpIcon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">핸디캡</span>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-5 w-5 -mr-1">
-                    <InfoIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 text-sm" side="bottom" align="end">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">핸디캡 계산 방법</h4>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      핸디캡은 최근 20라운드 중 상위 8개(가장 낮은) 스코어의 평균을 기준으로 계산됩니다.
-                    </p>
-                    <div className="text-xs space-y-1 bg-muted/50 p-2 rounded">
-                      <p><strong>계산 공식:</strong></p>
-                      <p>1. 최근 20라운드의 스코어 수집</p>
-                      <p>2. 각 라운드의 파 대비 스코어 계산</p>
-                      <p>3. 상위 8개 스코어 선별</p>
-                      <p>4. 8개 스코어의 평균 × 0.96</p>
-                    </div>
-                    <p className="text-muted-foreground text-xs">
-                      * 라운드가 20개 미만일 경우 가용 라운드의 약 40%를 사용합니다.
-                    </p>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <p className="text-2xl font-bold">
-              {stats.handicap > 0 ? stats.handicap.toFixed(1) : '-'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <TrophyIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">베스트</span>
-            </div>
-            <p className="text-2xl font-bold">
-              {stats.bestScore !== 0 ? formatScoreToPar(stats.bestScore) : '-'}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 평균 스코어 - roundHistory에서 계산된 파 대비 스코어 */}
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <span className="text-xs text-muted-foreground">평균 스코어</span>
-            <p className="text-2xl font-bold">
-              {averageScoreToPar !== null ? formatScoreToPar(averageScoreToPar) : '-'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <span className="text-xs text-muted-foreground">총 라운드</span>
-            <p className="text-2xl font-bold">{stats.totalRounds}회</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* 통계 카드 - 공통 컴포넌트 사용 */}
+      <StatsCards
+        handicap={stats.handicap}
+        bestScore={stats.bestScore}
+        averageScore={averageScoreToPar}
+        totalRounds={stats.totalRounds}
+        className="mb-6"
+      />
 
       {/* 최근 스코어 추이 - Line Chart with Labels */}
       {lineChartData.length > 0 && (

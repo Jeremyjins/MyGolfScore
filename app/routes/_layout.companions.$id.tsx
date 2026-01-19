@@ -26,10 +26,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
-import { ArrowLeftIcon, EditIcon, DeleteIcon, UserIcon, TrendingUpIcon, TrophyIcon } from '~/components/ui/icons';
+import { ArrowLeftIcon, EditIcon, DeleteIcon, UserIcon } from '~/components/ui/icons';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { formatScoreToPar } from '~/lib/score-utils';
+import { StatsCards } from '~/components/stats/stats-cards';
 import type { Companion } from '~/types';
 import {
   ChartContainer,
@@ -311,46 +312,15 @@ export default function CompanionDetailPage({
         </CardContent>
       </Card>
 
-      {/* 통계 카드 */}
+      {/* 통계 카드 - 공통 컴포넌트 사용 */}
       {stats.totalRounds > 0 && (
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUpIcon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">핸디캡</span>
-              </div>
-              <p className="text-2xl font-bold">
-                {stats.handicap > 0 ? stats.handicap.toFixed(1) : '-'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <TrophyIcon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">베스트</span>
-              </div>
-              <p className="text-2xl font-bold">
-                {stats.bestScore !== null ? formatScoreToPar(stats.bestScore) : '-'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <span className="text-xs text-muted-foreground">평균 스코어</span>
-              <p className="text-2xl font-bold">
-                {stats.averageScore !== 0 ? formatScoreToPar(stats.averageScore) : '-'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <span className="text-xs text-muted-foreground">총 라운드</span>
-              <p className="text-2xl font-bold">{stats.totalRounds}회</p>
-            </CardContent>
-          </Card>
-        </div>
+        <StatsCards
+          handicap={stats.handicap}
+          bestScore={stats.bestScore ?? 0}
+          averageScore={stats.averageScore}
+          totalRounds={stats.totalRounds}
+          className="mb-6"
+        />
       )}
 
       {/* 스코어 추이 차트 */}

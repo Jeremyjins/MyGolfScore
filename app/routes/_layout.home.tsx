@@ -6,8 +6,8 @@ import { Header } from '~/components/layout/header';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
-import { GolfIcon, TrendingUpIcon, TrophyIcon, TargetIcon, CalendarCheckIcon } from '~/components/ui/icons';
-import { formatScoreToPar } from '~/lib/score-utils';
+import { GolfIcon } from '~/components/ui/icons';
+import { StatsCards } from '~/components/stats/stats-cards';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
@@ -99,55 +99,13 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
         </Link>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUpIcon className="w-4 h-4 text-primary" />
-              <span className="text-sm text-muted-foreground">핸디캡</span>
-            </div>
-            <p className="text-2xl font-bold">
-              {stats.handicap > 0 ? stats.handicap.toFixed(1) : '-'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrophyIcon className="w-4 h-4 text-primary" />
-              <span className="text-sm text-muted-foreground">베스트</span>
-            </div>
-            <p className="text-2xl font-bold">
-              {stats.bestScore !== 0 ? formatScoreToPar(stats.bestScore) : '-'}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* 평균 스코어 - roundHistory에서 계산된 파 대비 스코어 */}
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TargetIcon className="w-4 h-4 text-primary" />
-              <span className="text-sm text-muted-foreground">평균 스코어</span>
-            </div>
-            <p className="text-2xl font-bold">
-              {averageScoreToPar !== null ? formatScoreToPar(averageScoreToPar) : '-'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CalendarCheckIcon className="w-4 h-4 text-primary" />
-              <span className="text-sm text-muted-foreground">총 라운드</span>
-            </div>
-            <p className="text-2xl font-bold">{stats.totalRounds}회</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* 통계 카드 - 공통 컴포넌트 사용 */}
+      <StatsCards
+        handicap={stats.handicap}
+        bestScore={stats.bestScore}
+        averageScore={averageScoreToPar}
+        totalRounds={stats.totalRounds}
+      />
 
       {/* 최근 스코어 추이 - Line Chart with Labels */}
       {lineChartData.length > 0 && (
