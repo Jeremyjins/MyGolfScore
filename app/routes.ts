@@ -4,8 +4,12 @@ export default [
   // 루트: 로그인 체크 후 리다이렉트
   index("routes/_index.tsx"),
 
-  // 로그인 (레이아웃 없음)
-  route("login", "routes/login.tsx"),
+  // Auth Routes (레이아웃 없음)
+  route("auth/login", "routes/auth/login.tsx"),
+  route("auth/signup", "routes/auth/signup.tsx"),
+  route("auth/forgot-password", "routes/auth/forgot-password.tsx"),
+  route("auth/reset-password", "routes/auth/reset-password.tsx"),
+  route("auth/callback", "routes/auth/callback.tsx"),
 
   // 라운드 관련 (레이아웃 없음 - 전용 UI)
   route("round/new", "routes/round.new.tsx"),

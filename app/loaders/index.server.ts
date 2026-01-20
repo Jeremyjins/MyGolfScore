@@ -1,14 +1,16 @@
-// Index page loader
+// Index page loader - redirects based on auth state
 import type { Route } from '../routes/+types/_index';
-import { getSession } from '~/lib/auth.server';
+import { getAuthSession } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
 import { redirect } from 'react-router';
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = getSession(request);
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const env = getEnvFromContext(context);
+  const { session, headers } = await getAuthSession(request, env);
 
   if (session) {
-    throw redirect('/home');
+    throw redirect('/home', { headers });
   }
 
-  throw redirect('/login');
+  throw redirect('/auth/login', { headers });
 }

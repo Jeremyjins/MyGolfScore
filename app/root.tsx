@@ -6,9 +6,21 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
 
 import type { Route } from "./+types/root";
+import { getQueryClient } from "~/lib/query-client";
 import "./app.css";
+
+// Devtools는 클라이언트에서만 lazy load (Cloudflare Workers 호환)
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@tanstack/react-query-devtools").then((mod) => ({
+        default: mod.ReactQueryDevtools,
+      }))
+    )
+  : () => null;
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -59,7 +71,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  const queryClient = getQueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+      {import.meta.env.DEV && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Suspense>
+      )}
+    </QueryClientProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

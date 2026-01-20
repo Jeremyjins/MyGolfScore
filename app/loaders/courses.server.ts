@@ -1,19 +1,19 @@
-// Courses page loader and action
+// Courses page loader and action with Supabase Auth
 import type { Route } from '../routes/+types/_layout.courses';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 import type { Course, HoleInfo, Json } from '~/types';
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
 
   const { data: courses } = await supabase
     .from('courses')
     .select('*')
-    .eq('user_id', session.userId)
+    .eq('user_id', userId)
     .order('is_favorite', { ascending: false })
     .order('name');
 
@@ -28,16 +28,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     updated_at: c.updated_at ?? '',
   }));
 
-  return { courses: typedCourses };
+  return data({ courses: typedCourses }, { headers });
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const session = requireAuth(request);
+  const env = getEnvFromContext(context);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
   const formData = await request.formData();
   const intent = formData.get('intent');
-
-  const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
 
   switch (intent) {
     case 'create': {
@@ -45,26 +44,26 @@ export async function action({ request, context }: Route.ActionArgs) {
       const holes = JSON.parse(formData.get('holes') as string) as HoleInfo[];
 
       if (!name || name.trim() === '') {
-        return { error: '코스 이름을 입력하세요.' };
+        return data({ error: '코스 이름을 입력하세요.' }, { headers });
       }
 
       const { error } = await supabase.from('courses').insert({
-        user_id: session.userId,
+        user_id: userId,
         name: name.trim(),
         holes: holes as unknown as Json,
       });
 
       if (error) {
-        return { error: '코스 등록에 실패했습니다.' };
+        return data({ error: '코스 등록에 실패했습니다.' }, { headers });
       }
 
-      return { success: true };
+      return data({ success: true }, { headers });
     }
 
     case 'delete': {
       const id = formData.get('id') as string;
       await supabase.from('courses').delete().eq('id', id);
-      return { success: true };
+      return data({ success: true }, { headers });
     }
 
     case 'toggleFavorite': {
@@ -76,9 +75,9 @@ export async function action({ request, context }: Route.ActionArgs) {
         .update({ is_favorite: !isFavorite })
         .eq('id', id);
 
-      return { success: true };
+      return data({ success: true }, { headers });
     }
   }
 
-  return { error: 'Unknown action' };
+  return data({ error: 'Unknown action' }, { headers });
 }

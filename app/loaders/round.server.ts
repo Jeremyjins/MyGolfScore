@@ -1,15 +1,15 @@
-// Round scoring page loader and action
+// Round scoring page loader and action with Supabase Auth
 import type { Route } from '../routes/+types/round.$id';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 import type { Course, HoleInfo, PlayerScore, RoundDetail } from '~/types';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-  const { id } = params;
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
+  const { id } = params;
 
   // 라운드 정보와 사용자의 코스 목록을 병렬로 가져오기
   const [roundResult, coursesResult] = await Promise.all([
@@ -31,12 +31,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       `
       )
       .eq('id', id)
-      .eq('user_id', session.userId)
+      .eq('user_id', userId)
       .single(),
     supabase
       .from('courses')
       .select('*')
-      .eq('user_id', session.userId)
+      .eq('user_id', userId)
       .order('is_favorite', { ascending: false })
       .order('name'),
   ]);
@@ -49,7 +49,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (roundError) {
       console.error('Round fetch error:', roundError, 'ID:', id);
     } else {
-      console.error('Round not found or unauthorized:', 'ID:', id, 'User:', session.userId);
+      console.error('Round not found or unauthorized:', 'ID:', id, 'User:', userId);
     }
     throw new Response('라운드를 찾을 수 없습니다.', { status: 404 });
   }
@@ -72,7 +72,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
       return {
         id: player.id,
-        name: player.companion?.name || session.userName,
+        name: player.companion?.name || session.profile.name,
         isUser: player.user_id !== null,
         scores: playerScores,
         totalScore: player.total_score,
@@ -109,17 +109,19 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     updated_at: c.updated_at ?? '',
   }));
 
-  return { round: roundDetail, userName: session.userName, courses: transformedCourses };
+  return data(
+    { round: roundDetail, userName: session.profile.name, courses: transformedCourses },
+    { headers }
+  );
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
-  const session = requireAuth(request);
+  const env = getEnvFromContext(context);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
   const { id } = params;
   const formData = await request.formData();
   const intent = formData.get('intent');
-
-  const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
 
   switch (intent) {
     case 'updateScore': {
@@ -173,7 +175,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .update({ total_score: totalScore, score_to_par: scoreToPar })
         .eq('id', roundPlayerId);
 
-      return { success: true };
+      return data({ success: true }, { headers });
     }
 
     case 'completeRound': {
@@ -181,9 +183,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .from('rounds')
         .update({ status: 'completed' })
         .eq('id', id)
-        .eq('user_id', session.userId);
+        .eq('user_id', userId);
 
-      return { success: true, completed: true };
+      return data({ success: true, completed: true }, { headers });
     }
 
     case 'updateRoundInfo': {
@@ -203,16 +205,16 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .from('rounds')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', session.userId);
+        .eq('user_id', userId);
 
-      return { success: true };
+      return data({ success: true }, { headers });
     }
 
     case 'updateCourse': {
       const courseId = formData.get('courseId') as string;
 
       if (!courseId) {
-        return { error: '코스를 선택하세요.' };
+        return data({ error: '코스를 선택하세요.' }, { headers });
       }
 
       // 코스가 사용자의 것인지 확인
@@ -220,22 +222,22 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .from('courses')
         .select('id')
         .eq('id', courseId)
-        .eq('user_id', session.userId)
+        .eq('user_id', userId)
         .single();
 
       if (!course) {
-        return { error: '유효하지 않은 코스입니다.' };
+        return data({ error: '유효하지 않은 코스입니다.' }, { headers });
       }
 
       await supabase
         .from('rounds')
         .update({ course_id: courseId })
         .eq('id', id)
-        .eq('user_id', session.userId);
+        .eq('user_id', userId);
 
-      return { success: true, courseUpdated: true };
+      return data({ success: true, courseUpdated: true }, { headers });
     }
   }
 
-  return { error: 'Unknown action' };
+  return data({ error: 'Unknown action' }, { headers });
 }

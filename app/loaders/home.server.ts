@@ -1,7 +1,8 @@
-// Home page loader
+// Home page loader with Supabase Auth
 import type { Route } from '../routes/+types/_layout.home';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 
 // 라운드별 데이터 (차트용)
 interface RoundData {
@@ -70,13 +71,11 @@ function parseStats(data: unknown): Omit<UserStats, 'roundHistory' | 'scoreDistr
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = requireAuth(request);
+  const env = getEnvFromContext(context);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
 
   try {
-    const env = getEnvFromContext(context);
-    const supabase = getSupabase(env);
-    const userId = session.userId;
-
     // 최근 라운드 5개 + 간단 통계 + 차트용 라운드 히스토리
     const [roundsResult, statsResult, roundHistoryResult] = await Promise.all([
       supabase
@@ -86,7 +85,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           play_date,
           tee_time,
           status,
-          course:courses(id, name, holes)
+          course:courses(id, name, holes),
+          round_players(
+            id,
+            is_owner,
+            total_score,
+            score_to_par,
+            companion:companions(name)
+          )
         `)
         .eq('user_id', userId)
         .order('play_date', { ascending: false })
@@ -152,25 +158,62 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       triple_plus: rawDistribution?.triple_plus || 0,
     };
 
-    return {
-      userName: session.userName,
-      recentRounds: roundsResult.data ?? [],
-      stats: {
-        totalRounds: parsedStats.totalRounds,
-        averageScore: parsedStats.averageScore,
-        bestScore: parsedStats.bestScore,
-        handicap: parsedStats.handicap,
-        recentScores: parsedStats.recentScores,
-        roundHistory,
-        scoreDistribution,
+    // 최근 라운드 데이터 가공 (내 스코어 + 동반자)
+    const recentRounds = (roundsResult.data ?? []).map((round) => {
+      const players = round.round_players as Array<{
+        is_owner: boolean;
+        total_score: number | null;
+        score_to_par: number | null;
+        companion: { name: string } | null;
+      }>;
+
+      // 내 스코어 (is_owner = true인 플레이어)
+      const ownerPlayer = players?.find((p) => p.is_owner);
+      const myScore = ownerPlayer?.total_score ?? null;
+      const myScoreToPar = ownerPlayer?.score_to_par ?? null;
+
+      // 동반자 목록 (is_owner = false인 플레이어들)
+      const companions = players
+        ?.filter((p) => !p.is_owner && p.companion?.name)
+        .map((p) => p.companion!.name) ?? [];
+
+      return {
+        id: round.id,
+        play_date: round.play_date,
+        tee_time: round.tee_time,
+        status: round.status,
+        course: round.course,
+        myScore,
+        myScoreToPar,
+        companions,
+      };
+    });
+
+    return data(
+      {
+        userName: session.profile.name,
+        recentRounds,
+        stats: {
+          totalRounds: parsedStats.totalRounds,
+          averageScore: parsedStats.averageScore,
+          bestScore: parsedStats.bestScore,
+          handicap: parsedStats.handicap,
+          recentScores: parsedStats.recentScores,
+          roundHistory,
+          scoreDistribution,
+        },
       },
-    };
+      { headers }
+    );
   } catch (error) {
     console.error('Home loader error:', error);
-    return {
-      userName: session.userName,
-      recentRounds: [],
-      stats: defaultStats,
-    };
+    return data(
+      {
+        userName: session.profile.name,
+        recentRounds: [],
+        stats: defaultStats,
+      },
+      { headers }
+    );
   }
 }

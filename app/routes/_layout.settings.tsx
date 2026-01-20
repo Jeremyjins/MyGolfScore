@@ -21,7 +21,7 @@ import { GolfIcon, UsersIcon, LogOutIcon, InfoIcon } from '~/components/ui/icons
 export { loader, action } from '~/loaders/settings.server';
 
 export default function SettingsPage({ loaderData }: Route.ComponentProps) {
-  const { userName, stats } = loaderData;
+  const { userName, userEmail, stats } = loaderData;
   const fetcher = useFetcher<typeof import('~/loaders/settings.server').action>();
 
   const handleLogout = () => {
@@ -43,7 +43,7 @@ export default function SettingsPage({ loaderData }: Route.ComponentProps) {
             </div>
             <div>
               <h2 className="text-xl font-bold">{userName}</h2>
-              <p className="text-sm text-muted-foreground">골프 스코어 기록</p>
+              <p className="text-sm text-muted-foreground">{userEmail}</p>
             </div>
           </div>
         </CardContent>

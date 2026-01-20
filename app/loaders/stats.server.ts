@@ -1,7 +1,8 @@
-// Stats page loader
+// Stats page loader with Supabase Auth
 import type { Route } from '../routes/+types/_layout.stats';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 
 // 라운드별 데이터 (차트용)
 interface RoundData {
@@ -48,14 +49,13 @@ const defaultStats: UserStats = {
 };
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
 
   // 기존 RPC 호출
-  const { data } = await supabase.rpc('get_user_stats', {
-    p_user_id: session.userId,
+  const { data: rpcResult } = await supabase.rpc('get_user_stats', {
+    p_user_id: userId,
   });
 
   // 라운드별 세부 정보 쿼리
@@ -72,7 +72,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         score_to_par
       )
     `)
-    .eq('user_id', session.userId)
+    .eq('user_id', userId)
     .eq('status', 'completed')
     .eq('round_players.is_owner', true)
     .order('play_date', { ascending: true })
@@ -101,7 +101,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   // RPC 결과 타입 처리
-  const rpcData = data as Record<string, unknown> | null;
+  const rpcData = rpcResult as Record<string, unknown> | null;
 
   // 스코어 분포 처리
   const rawDistribution = rpcData?.scoreDistribution as Record<string, number> | null;
@@ -126,5 +126,5 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       }
     : defaultStats;
 
-  return { stats };
+  return data({ stats }, { headers });
 }

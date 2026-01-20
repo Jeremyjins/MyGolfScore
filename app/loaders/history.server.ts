@@ -1,7 +1,8 @@
-// History list page loader
+// History list page loader with Supabase Auth
 import type { Route } from '../routes/+types/_layout.history';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 
 interface RoundSummary {
   id: string;
@@ -15,10 +16,9 @@ interface RoundSummary {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
 
   const { data: rounds } = await supabase
     .from('rounds')
@@ -32,7 +32,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       round_players(total_score, score_to_par, user_id)
     `
     )
-    .eq('user_id', session.userId)
+    .eq('user_id', userId)
     .order('play_date', { ascending: false });
 
   const roundSummaries: RoundSummary[] = (rounds ?? []).map((round: any) => {
@@ -49,5 +49,5 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     };
   });
 
-  return { rounds: roundSummaries };
+  return data({ rounds: roundSummaries }, { headers });
 }

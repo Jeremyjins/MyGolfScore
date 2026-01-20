@@ -41,9 +41,12 @@ interface ChartContainerProps extends React.ComponentProps<'div'> {
 }
 
 const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
-  ({ id, className, children, config, ...props }, ref) => {
+  ({ id, className, children, config, style, ...props }, ref) => {
     const uniqueId = React.useId();
     const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
+
+    // style에서 height 추출 (ResponsiveContainer에 명시적으로 전달)
+    const containerHeight = style?.height;
 
     return (
       <ChartContext.Provider value={{ config }}>
@@ -54,10 +57,16 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
             "flex justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
             className
           )}
+          style={style}
           {...props}
         >
           <ChartStyle id={chartId} config={config} />
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <ResponsiveContainer
+            width="100%"
+            height={containerHeight || "100%"}
+            minWidth={0}
+            minHeight={containerHeight ? undefined : 0}
+          >
             {children}
           </ResponsiveContainer>
         </div>

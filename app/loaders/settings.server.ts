@@ -1,51 +1,52 @@
-// Settings page loader and action
-import { redirect } from 'react-router';
+// Settings page loader and action with Supabase Auth
+import { redirect, data } from 'react-router';
 import type { Route } from '../routes/+types/_layout.settings';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
-import { requireAuth, deleteSessionCookie } from '~/lib/auth.server';
+import { requireAuth, signOut } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
 
   const [coursesResult, companionsResult, roundsResult] = await Promise.all([
     supabase
       .from('courses')
       .select('id', { count: 'exact' })
-      .eq('user_id', session.userId),
+      .eq('user_id', userId),
     supabase
       .from('companions')
       .select('id', { count: 'exact' })
-      .eq('user_id', session.userId),
+      .eq('user_id', userId),
     supabase
       .from('rounds')
       .select('id', { count: 'exact' })
-      .eq('user_id', session.userId),
+      .eq('user_id', userId),
   ]);
 
-  return {
-    userName: session.userName,
-    stats: {
-      courses: coursesResult.count ?? 0,
-      companions: companionsResult.count ?? 0,
-      rounds: roundsResult.count ?? 0,
+  return data(
+    {
+      userName: session.profile.name,
+      userEmail: session.user.email,
+      stats: {
+        courses: coursesResult.count ?? 0,
+        companions: companionsResult.count ?? 0,
+        rounds: roundsResult.count ?? 0,
+      },
     },
-  };
+    { headers }
+  );
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get('intent');
+  const env = getEnvFromContext(context);
 
   if (intent === 'logout') {
-    return redirect('/login', {
-      headers: {
-        'Set-Cookie': deleteSessionCookie(),
-      },
-    });
+    const { headers } = await signOut(request, env);
+    return redirect('/auth/login', { headers });
   }
 
-  return { error: 'Unknown action' };
+  return data({ error: 'Unknown action' });
 }

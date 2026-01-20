@@ -1,15 +1,15 @@
-// History detail page loader and action
+// History detail page loader and action with Supabase Auth
 import type { Route } from '../routes/+types/_layout.history.$id';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-  const { id } = params;
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
+  const { id } = params;
 
   const { data: round, error: roundError } = await supabase
     .from('rounds')
@@ -29,7 +29,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     `
     )
     .eq('id', id)
-    .eq('user_id', session.userId)
+    .eq('user_id', userId)
     .single();
 
   if (roundError || !round) {
@@ -37,7 +37,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (roundError) {
       console.error('Round fetch error:', roundError, 'ID:', id);
     } else {
-      console.error('Round not found or unauthorized:', 'ID:', id, 'User:', session.userId);
+      console.error('Round not found or unauthorized:', 'ID:', id, 'User:', userId);
     }
     throw new Response('라운드를 찾을 수 없습니다.', { status: 404 });
   }
@@ -60,7 +60,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
       return {
         id: player.id,
-        name: player.companion?.name || session.userName,
+        name: player.companion?.name || session.profile.name,
         isUser: player.user_id !== null,
         scores: playerScores,
         totalScore: player.total_score,
@@ -86,17 +86,16 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     players,
   };
 
-  return { round: roundDetail, userName: session.userName };
+  return data({ round: roundDetail, userName: session.profile.name }, { headers });
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
-  const session = requireAuth(request);
+  const env = getEnvFromContext(context);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
   const { id } = params;
   const formData = await request.formData();
   const intent = formData.get('intent');
-
-  const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
 
   switch (intent) {
     case 'delete': {
@@ -104,11 +103,11 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .from('rounds')
         .delete()
         .eq('id', id)
-        .eq('user_id', session.userId);
+        .eq('user_id', userId);
 
-      return { success: true, deleted: true };
+      return data({ success: true, deleted: true }, { headers });
     }
   }
 
-  return { error: 'Unknown action' };
+  return data({ error: 'Unknown action' }, { headers });
 }

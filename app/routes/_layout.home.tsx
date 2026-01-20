@@ -114,32 +114,51 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
             </Link>
           </div>
           <div className="space-y-4">
-            {recentRounds.map((round: any) => (
-              <Link key={round.id} to={`/history/${round.id}`}>
-                <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
-                  <CardContent className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="font-medium">
-                        {round.course?.name || '코스 미지정'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(round.play_date), 'yyyy년 M월 d일 (E)', {
-                          locale: ko,
-                        })}
-                        {round.tee_time && ` ${round.tee_time.slice(0, 5)}`}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        round.status === 'completed' ? 'default' : 'secondary'
-                      }
-                    >
-                      {round.status === 'completed' ? '완료' : '진행중'}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {recentRounds.map((round: any) => {
+              // 스코어 표시 포맷
+              const scoreDisplay = round.myScore
+                ? round.myScoreToPar !== null
+                  ? round.myScoreToPar > 0
+                    ? `${round.myScore} (+${round.myScoreToPar})`
+                    : round.myScoreToPar < 0
+                      ? `${round.myScore} (${round.myScoreToPar})`
+                      : `${round.myScore} (E)`
+                  : `${round.myScore}타`
+                : null;
+
+              return (
+                <Link key={round.id} to={`/history/${round.id}`}>
+                  <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
+                    <CardContent className="py-3 space-y-1">
+                      {/* 첫째 줄: 코스명 + 날짜 */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="font-medium truncate">
+                            {round.course?.name || '코스 미지정'}
+                          </p>
+                          {round.status === 'in_progress' && (
+                            <Badge variant="secondary" className="shrink-0 text-xs">진행중</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground shrink-0 ml-2">
+                          {format(new Date(round.play_date), 'M월 d일 (E)', { locale: ko })}
+                          {round.tee_time && ` ${round.tee_time.slice(0, 5)}`}
+                        </p>
+                      </div>
+                      {/* 둘째 줄: 동반자 + 스코어 */}
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground truncate">
+                          {round.companions.length > 0 ? round.companions.join(', ') : '솔로 라운드'}
+                        </p>
+                        {scoreDisplay && (
+                          <p className="text-base font-bold shrink-0 ml-2">{scoreDisplay}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

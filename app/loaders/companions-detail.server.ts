@@ -1,7 +1,8 @@
-// Companion detail page loader and action
+// Companion detail page loader and action with Supabase Auth
 import type { Route } from '../routes/+types/_layout.companions.$id';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 import type { Companion } from '~/types';
 
 interface RoundHistory {
@@ -30,17 +31,16 @@ interface ScoreDistribution {
 }
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-  const { id } = params;
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
+  const { id } = params;
 
   const { data: companion, error: companionError } = await supabase
     .from('companions')
     .select('*')
     .eq('id', id)
-    .eq('user_id', session.userId)
+    .eq('user_id', userId)
     .single();
 
   if (companionError || !companion) {
@@ -186,37 +186,36 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     scoreDistribution,
   };
 
-  return { companion: companion as Companion, roundHistory, stats };
+  return data({ companion: companion as Companion, roundHistory, stats }, { headers });
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
-  const session = requireAuth(request);
+  const env = getEnvFromContext(context);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
   const { id } = params;
   const formData = await request.formData();
   const intent = formData.get('intent');
-
-  const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
 
   switch (intent) {
     case 'update': {
       const name = formData.get('name') as string;
 
       if (!name || name.trim() === '') {
-        return { error: '이름을 입력하세요.' };
+        return data({ error: '이름을 입력하세요.' }, { headers });
       }
 
       const { error } = await supabase
         .from('companions')
         .update({ name: name.trim() })
         .eq('id', id)
-        .eq('user_id', session.userId);
+        .eq('user_id', userId);
 
       if (error) {
-        return { error: '수정에 실패했습니다.' };
+        return data({ error: '수정에 실패했습니다.' }, { headers });
       }
 
-      return { success: true };
+      return data({ success: true }, { headers });
     }
 
     case 'delete': {
@@ -224,11 +223,11 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .from('companions')
         .delete()
         .eq('id', id)
-        .eq('user_id', session.userId);
+        .eq('user_id', userId);
 
-      return { success: true, redirect: '/companions' };
+      return data({ success: true, redirect: '/companions' }, { headers });
     }
   }
 
-  return { error: 'Unknown action' };
+  return data({ error: 'Unknown action' }, { headers });
 }

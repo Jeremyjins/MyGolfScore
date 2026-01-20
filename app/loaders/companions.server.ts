@@ -1,55 +1,54 @@
-// Companions page loader and action
+// Companions page loader and action with Supabase Auth
 import type { Route } from '../routes/+types/_layout.companions';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = requireAuth(request);
-
   const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
 
   const { data: companions } = await supabase.rpc('get_companions_with_stats', {
-    p_user_id: session.userId,
+    p_user_id: userId,
   });
 
-  return { companions: companions ?? [] };
+  return data({ companions: companions ?? [] }, { headers });
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const session = requireAuth(request);
+  const env = getEnvFromContext(context);
+  const { session, supabase, headers } = await requireAuth(request, env);
+  const userId = session.user.id;
   const formData = await request.formData();
   const intent = formData.get('intent');
-
-  const env = getEnvFromContext(context);
-  const supabase = getSupabase(env);
 
   switch (intent) {
     case 'create': {
       const name = formData.get('name') as string;
 
       if (!name || name.trim() === '') {
-        return { error: '동반자 이름을 입력하세요.' };
+        return data({ error: '동반자 이름을 입력하세요.' }, { headers });
       }
 
       const { error } = await supabase.from('companions').insert({
-        user_id: session.userId,
+        user_id: userId,
         name: name.trim(),
       });
 
       if (error) {
-        return { error: '동반자 등록에 실패했습니다.' };
+        return data({ error: '동반자 등록에 실패했습니다.' }, { headers });
       }
 
-      return { success: true };
+      return data({ success: true }, { headers });
     }
 
     case 'delete': {
       const id = formData.get('id') as string;
       await supabase.from('companions').delete().eq('id', id);
-      return { success: true };
+      return data({ success: true }, { headers });
     }
   }
 
-  return { error: 'Unknown action' };
+  return data({ error: 'Unknown action' }, { headers });
 }
