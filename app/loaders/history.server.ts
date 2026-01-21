@@ -13,6 +13,7 @@ interface RoundSummary {
   total_score: number | null;
   score_to_par: number | null;
   player_count: number;
+  companions: string[];
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -29,23 +30,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       tee_time,
       status,
       course:courses(name),
-      round_players(total_score, score_to_par, user_id)
+      round_players(total_score, score_to_par, user_id, is_owner, companion:companions(name))
     `
     )
     .eq('user_id', userId)
     .order('play_date', { ascending: false });
 
   const roundSummaries: RoundSummary[] = (rounds ?? []).map((round: any) => {
-    const userPlayer = round.round_players.find((p: any) => p.user_id !== null);
+    const ownerPlayer = round.round_players.find((p: any) => p.is_owner === true);
+    const companions = round.round_players
+      .filter((p: any) => !p.is_owner && p.companion?.name)
+      .map((p: any) => p.companion.name);
     return {
       id: round.id,
       play_date: round.play_date,
       tee_time: round.tee_time,
       status: round.status,
       course_name: round.course?.name || '코스 미지정',
-      total_score: userPlayer?.total_score || null,
-      score_to_par: userPlayer?.score_to_par || null,
+      total_score: ownerPlayer?.total_score || null,
+      score_to_par: ownerPlayer?.score_to_par || null,
       player_count: round.round_players.length,
+      companions,
     };
   });
 

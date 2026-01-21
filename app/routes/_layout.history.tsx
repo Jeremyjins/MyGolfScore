@@ -3,12 +3,10 @@ import { Link } from 'react-router';
 import type { Route } from './+types/_layout.history';
 import { PageContainer } from '~/components/layout/page-container';
 import { Header } from '~/components/layout/header';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
 import { GolfIcon } from '~/components/ui/icons';
+import { RoundCard } from '~/components/history/round-card';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { formatScoreToPar } from '~/lib/score-utils';
 
 export { loader } from '~/loaders/history.server';
 
@@ -21,6 +19,7 @@ interface RoundSummary {
   total_score: number | null;
   score_to_par: number | null;
   player_count: number;
+  companions: string[];
 }
 
 export default function HistoryPage({ loaderData }: Route.ComponentProps) {
@@ -63,48 +62,17 @@ export default function HistoryPage({ loaderData }: Route.ComponentProps) {
               </h2>
               <div className="space-y-2">
                 {monthRounds.map((round) => (
-                  <Link key={round.id} to={`/history/${round.id}`}>
-                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
-                      <CardContent className="flex items-center justify-between py-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{round.course_name}</p>
-                            {round.status === 'in_progress' && (
-                              <Badge variant="secondary" className="text-xs">
-                                진행중
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(round.play_date), 'M월 d일 (E)', {
-                              locale: ko,
-                            })}
-                            {round.tee_time && ` ${round.tee_time.slice(0, 5)}`}
-                            {round.player_count > 1 &&
-                              ` · ${round.player_count}명`}
-                          </p>
-                        </div>
-                        {round.total_score !== null && (
-                          <div className="text-right">
-                            <p className="text-xl font-bold">
-                              {round.total_score}
-                            </p>
-                            <p
-                              className={
-                                (round.score_to_par ?? 0) > 0
-                                  ? 'text-sm text-blue-600'
-                                  : (round.score_to_par ?? 0) < 0
-                                  ? 'text-sm text-red-600'
-                                  : 'text-sm text-green-600'
-                              }
-                            >
-                              {formatScoreToPar(round.score_to_par ?? 0)}
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Link>
+                  <RoundCard
+                    key={round.id}
+                    id={round.id}
+                    courseName={round.course_name}
+                    playDate={round.play_date}
+                    teeTime={round.tee_time}
+                    status={round.status}
+                    companions={round.companions}
+                    totalScore={round.total_score}
+                    scoreToPar={round.score_to_par}
+                  />
                 ))}
               </div>
             </div>

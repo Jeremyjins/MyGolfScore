@@ -5,13 +5,11 @@ import { PageContainer } from '~/components/layout/page-container';
 import { Header } from '~/components/layout/header';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
 import { GolfIcon } from '~/components/ui/icons';
 import { StatsCards } from '~/components/stats/stats-cards';
 import { ScoreDistributionChart } from '~/components/charts/score-distribution-chart';
 import { ScoreTrendChart } from '~/components/charts/score-trend-chart';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { RoundCard } from '~/components/history/round-card';
 
 export { loader } from '~/loaders/home.server';
 
@@ -113,52 +111,20 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
               전체보기
             </Link>
           </div>
-          <div className="space-y-4">
-            {recentRounds.map((round: any) => {
-              // 스코어 표시 포맷
-              const scoreDisplay = round.myScore
-                ? round.myScoreToPar !== null
-                  ? round.myScoreToPar > 0
-                    ? `${round.myScore} (+${round.myScoreToPar})`
-                    : round.myScoreToPar < 0
-                      ? `${round.myScore} (${round.myScoreToPar})`
-                      : `${round.myScore} (E)`
-                  : `${round.myScore}타`
-                : null;
-
-              return (
-                <Link key={round.id} to={`/history/${round.id}`}>
-                  <Card className="hover:bg-accent/50 transition-colors cursor-pointer py-2 mb-2">
-                    <CardContent className="py-3 space-y-1">
-                      {/* 첫째 줄: 코스명 + 날짜 */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="font-medium truncate">
-                            {round.course?.name || '코스 미지정'}
-                          </p>
-                          {round.status === 'in_progress' && (
-                            <Badge variant="secondary" className="shrink-0 text-xs">진행중</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground shrink-0 ml-2">
-                          {format(new Date(round.play_date), 'M월 d일 (E)', { locale: ko })}
-                          {round.tee_time && ` ${round.tee_time.slice(0, 5)}`}
-                        </p>
-                      </div>
-                      {/* 둘째 줄: 동반자 + 스코어 */}
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground truncate">
-                          {round.companions.length > 0 ? round.companions.join(', ') : '솔로 라운드'}
-                        </p>
-                        {scoreDisplay && (
-                          <p className="text-base font-bold shrink-0 ml-2">{scoreDisplay}</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+          <div className="space-y-2">
+            {recentRounds.map((round: any) => (
+              <RoundCard
+                key={round.id}
+                id={round.id}
+                courseName={round.course?.name || '코스 미지정'}
+                playDate={round.play_date}
+                teeTime={round.tee_time}
+                status={round.status}
+                companions={round.companions}
+                totalScore={round.myScore}
+                scoreToPar={round.myScoreToPar}
+              />
+            ))}
           </div>
         </div>
       )}

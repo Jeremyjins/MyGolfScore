@@ -81,7 +81,7 @@ export default function HistoryDetailPage({
       return String(score);
     }
     const diff = score - par;
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };
@@ -92,7 +92,7 @@ export default function HistoryDetailPage({
       return String(total);
     }
     const diff = total - par;
-    if (diff === 0) return 'E';
+    if (diff === 0) return '0';
     if (diff > 0) return `+${diff}`;
     return String(diff);
   };
