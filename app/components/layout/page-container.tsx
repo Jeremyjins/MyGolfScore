@@ -20,7 +20,7 @@ export function PageContainer({
         'min-h-screen',
         !noPadding && 'px-4 pt-safe-4', // iOS safe area + 기본 패딩
         noPadding && 'pt-safe', // 패딩 없을 때도 safe area 적용
-        !noBottomPadding && 'pb-20', // Bottom nav 높이 + 여유 (nav 자체가 safe area 처리)
+        !noBottomPadding && 'pb-18', // Bottom nav h-14(56px) + safe area
         className
       )}
     >
