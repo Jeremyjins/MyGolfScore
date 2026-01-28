@@ -3,7 +3,7 @@ import type { Route } from '../routes/+types/_layout.history.$id';
 import { requireAuth } from '~/lib/auth.server';
 import { getEnvFromContext } from '~/lib/supabase.server';
 import { data } from 'react-router';
-import type { HoleInfo, PlayerScore, RoundDetail } from '~/types';
+import type { HoleClubData, HoleInfo, PlayerScore, RoundClubStats, RoundDetail } from '~/types';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const env = getEnvFromContext(context);
@@ -86,7 +86,21 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     players,
   };
 
-  return data({ round: roundDetail, userName: session.profile.name }, { headers });
+  // 클럽 통계 및 홀별 클럽 데이터 로드
+  const [clubStatsResult, holeClubsResult] = await Promise.all([
+    supabase.rpc('get_round_club_stats', { p_round_id: id }),
+    supabase.rpc('get_round_hole_clubs', { p_round_id: id }),
+  ]);
+
+  const clubStats = (clubStatsResult.data as RoundClubStats | null) ?? {
+    totalPutts: 0,
+    puttDistribution: null,
+    clubUsage: null,
+  };
+
+  const holeClubs = (holeClubsResult.data as HoleClubData[] | null) ?? [];
+
+  return data({ round: roundDetail, userName: session.profile.name, clubStats, holeClubs }, { headers });
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {

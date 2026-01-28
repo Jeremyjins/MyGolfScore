@@ -195,7 +195,22 @@
 <a name='L130'></a><a href='#L130'>130</a>
 <a name='L131'></a><a href='#L131'>131</a>
 <a name='L132'></a><a href='#L132'>132</a>
-<a name='L133'></a><a href='#L133'>133</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -226,6 +241,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -346,11 +374,12 @@ import {
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
 import { GolfIcon, UsersIcon, LogOutIcon, InfoIcon } from '~/components/ui/icons';
+import { ClubSelector } from '~/components/club/club-selector';
 &nbsp;
 export { loader, action } from '~/loaders/settings.server';
 &nbsp;
 export default function <span class="fstat-no" title="function not covered" >SettingsPage({</span> loaderData }: Route.ComponentProps) {
-  const { userName, stats } = <span class="cstat-no" title="statement not covered" >loaderData;</span>
+  const { userName, userEmail, stats, allClubs, userClubIds } = <span class="cstat-no" title="statement not covered" >loaderData;</span>
   const <span class="cstat-no" title="statement not covered" >fetcher = useFetcher&lt;typeof import('~/loaders/settings.server').action&gt;();</span>
 &nbsp;
   const handleLogout = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; {</span></span>
@@ -372,7 +401,7 @@ export default function <span class="fstat-no" title="function not covered" >Set
             &lt;/div&gt;
             &lt;div&gt;
               &lt;h2 className="text-xl font-bold"&gt;{userName}&lt;/h2&gt;
-              &lt;p className="text-sm text-muted-foreground"&gt;골프 스코어 기록&lt;/p&gt;
+              &lt;p className="text-sm text-muted-foreground"&gt;{userEmail}&lt;/p&gt;
             &lt;/div&gt;
           &lt;/div&gt;
         &lt;/CardContent&gt;
@@ -402,8 +431,8 @@ export default function <span class="fstat-no" title="function not covered" >Set
       &lt;/Card&gt;
 &nbsp;
       {/* 메뉴 */}
-      &lt;div className="space-y-2 mb-6"&gt;
-        &lt;Link to="/courses"&gt;
+      &lt;div className="space-y-4 mb-4"&gt;
+        &lt;Link to="/courses" className="block"&gt;
           &lt;Card className="hover:bg-accent/50 transition-colors cursor-pointer"&gt;
             &lt;CardContent className="flex items-center gap-3 py-4"&gt;
               &lt;GolfIcon className="w-5 h-5 text-muted-foreground" /&gt;
@@ -412,7 +441,7 @@ export default function <span class="fstat-no" title="function not covered" >Set
           &lt;/Card&gt;
         &lt;/Link&gt;
 &nbsp;
-        &lt;Link to="/companions"&gt;
+        &lt;Link to="/companions" className="block"&gt;
           &lt;Card className="hover:bg-accent/50 transition-colors cursor-pointer"&gt;
             &lt;CardContent className="flex items-center gap-3 py-4"&gt;
               &lt;UsersIcon className="w-5 h-5 text-muted-foreground" /&gt;
@@ -421,6 +450,19 @@ export default function <span class="fstat-no" title="function not covered" >Set
           &lt;/Card&gt;
         &lt;/Link&gt;
       &lt;/div&gt;
+&nbsp;
+      {/* 내 클럽 */}
+      &lt;Card className="mb-6"&gt;
+        &lt;CardHeader className="pb-2"&gt;
+          &lt;CardTitle className="text-base"&gt;내 클럽&lt;/CardTitle&gt;
+          &lt;p className="text-sm text-muted-foreground"&gt;
+            보유한 클럽을 선택하세요. 라운드 중 클럽별 샷을 기록할 수 있습니다.
+          &lt;/p&gt;
+        &lt;/CardHeader&gt;
+        &lt;CardContent&gt;
+          &lt;ClubSelector allClubs={allClubs} userClubIds={userClubIds} /&gt;
+        &lt;/CardContent&gt;
+      &lt;/Card&gt;
 &nbsp;
       {/* 앱 정보 */}
       &lt;Card className="mb-6"&gt;
@@ -466,7 +508,7 @@ export default function <span class="fstat-no" title="function not covered" >Set
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-17T23:32:46.059Z
+                at 2026-01-28T16:15:36.154Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

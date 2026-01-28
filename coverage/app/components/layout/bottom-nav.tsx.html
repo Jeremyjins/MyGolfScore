@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>0/6</span>
             </div>
         
             
@@ -128,22 +128,7 @@
 <a name='L63'></a><a href='#L63'>63</a>
 <a name='L64'></a><a href='#L64'>64</a>
 <a name='L65'></a><a href='#L65'>65</a>
-<a name='L66'></a><a href='#L66'>66</a>
-<a name='L67'></a><a href='#L67'>67</a>
-<a name='L68'></a><a href='#L68'>68</a>
-<a name='L69'></a><a href='#L69'>69</a>
-<a name='L70'></a><a href='#L70'>70</a>
-<a name='L71'></a><a href='#L71'>71</a>
-<a name='L72'></a><a href='#L72'>72</a>
-<a name='L73'></a><a href='#L73'>73</a>
-<a name='L74'></a><a href='#L74'>74</a>
-<a name='L75'></a><a href='#L75'>75</a>
-<a name='L76'></a><a href='#L76'>76</a>
-<a name='L77'></a><a href='#L77'>77</a>
-<a name='L78'></a><a href='#L78'>78</a>
-<a name='L79'></a><a href='#L79'>79</a>
-<a name='L80'></a><a href='#L80'>80</a>
-<a name='L81'></a><a href='#L81'>81</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L66'></a><a href='#L66'>66</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -187,21 +172,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -250,15 +220,15 @@ const navItems: NavItem[] = <span class="cstat-no" title="statement not covered"
 &nbsp;
 export function <span class="fstat-no" title="function not covered" >BottomNav() {</span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-    &lt;nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-area-inset-bottom"&gt;
-      &lt;div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2"&gt;
+    &lt;nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border pb-safe"&gt;
+      &lt;div className="flex items-center justify-around h-14 max-w-lg mx-auto px-2"&gt;
         {navItems.map(<span class="fstat-no" title="function not covered" >(i</span>tem) =&gt; (
 <span class="cstat-no" title="statement not covered" >          &lt;NavLink</span>
             key={item.to}
             to={item.to}
             className={<span class="fstat-no" title="function not covered" >({</span> isActive <span class="cstat-no" title="statement not covered" >}) =&gt;</span>
               cn(
-                'flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors',
+                'relative flex flex-col items-center justify-center w-full h-full gap-1 transition-colors',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -267,32 +237,17 @@ export function <span class="fstat-no" title="function not covered" >BottomNav()
           &gt;
             {<span class="fstat-no" title="function not covered" >({</span> isActive }) =&gt; (
 <span class="cstat-no" title="statement not covered" >              &lt;&gt;</span>
-                {/* 중앙 시작 버튼은 특별 스타일 */}
-                {item.to === '/round/new' ? (
-                  &lt;div
-                    className={cn(
-                      'flex items-center justify-center w-12 h-12 rounded-full -mt-6 shadow-lg transition-all',
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-primary/90 text-primary-foreground hover:bg-primary'
-                    )}
-                  &gt;
-                    &lt;item.icon className="w-6 h-6" /&gt;
-                  &lt;/div&gt;
-                ) : (
-                  &lt;item.icon
-                    className={cn(
-                      'w-5 h-5 transition-transform',
-                      isActive &amp;&amp; 'scale-110'
-                    )}
-                  /&gt;
+                {/* 활성 탭 상단 인디케이터 */}
+                {isActive &amp;&amp; (
+                  &lt;div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" /&gt;
                 )}
-                &lt;span
+                &lt;item.icon
                   className={cn(
-                    'text-xs font-medium',
-                    item.to === '/round/new' &amp;&amp; '-mt-1'
+                    'w-5 h-5 transition-transform',
+                    isActive &amp;&amp; 'scale-110'
                   )}
-                &gt;
+                /&gt;
+                &lt;span className="text-xs font-medium"&gt;
                   {item.label}
                 &lt;/span&gt;
               &lt;/&gt;
@@ -310,7 +265,7 @@ export function <span class="fstat-no" title="function not covered" >BottomNav()
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-17T23:32:46.059Z
+                at 2026-01-28T16:15:36.154Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -17,11 +17,12 @@ import {
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
 import { GolfIcon, UsersIcon, LogOutIcon, InfoIcon } from '~/components/ui/icons';
+import { ClubSelector } from '~/components/club/club-selector';
 
 export { loader, action } from '~/loaders/settings.server';
 
 export default function SettingsPage({ loaderData }: Route.ComponentProps) {
-  const { userName, userEmail, stats } = loaderData;
+  const { userName, userEmail, stats, allClubs, userClubIds } = loaderData;
   const fetcher = useFetcher<typeof import('~/loaders/settings.server').action>();
 
   const handleLogout = () => {
@@ -92,6 +93,19 @@ export default function SettingsPage({ loaderData }: Route.ComponentProps) {
           </Card>
         </Link>
       </div>
+
+      {/* 내 클럽 */}
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">내 클럽</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            보유한 클럽을 선택하세요. 라운드 중 클럽별 샷을 기록할 수 있습니다.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ClubSelector allClubs={allClubs} userClubIds={userClubIds} />
+        </CardContent>
+      </Card>
 
       {/* 앱 정보 */}
       <Card className="mb-6">

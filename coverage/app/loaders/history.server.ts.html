@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/9</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>0/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>0/11</span>
             </div>
         
             
@@ -116,29 +116,16 @@
 <a name='L51'></a><a href='#L51'>51</a>
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
-<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -157,6 +144,29 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -169,10 +179,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// History list page loader
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// History list page loader with Supabase Auth
 import type { Route } from '../routes/+types/_layout.history';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 &nbsp;
 interface RoundSummary {
   id: string;
@@ -183,13 +194,13 @@ interface RoundSummary {
   total_score: number | null;
   score_to_par: number | null;
   player_count: number;
+  companions: string[];
 }
 &nbsp;
 export async function <span class="fstat-no" title="function not covered" >loader({</span> request, context }: Route.LoaderArgs) {
-  const <span class="cstat-no" title="statement not covered" >session = requireAuth(request);</span>
-&nbsp;
   const <span class="cstat-no" title="statement not covered" >env = getEnvFromContext(context);</span>
-  const <span class="cstat-no" title="statement not covered" >supabase = getSupabase(env);</span>
+  const { session, supabase, headers } = <span class="cstat-no" title="statement not covered" >await requireAuth(request, env);</span>
+  const userId = <span class="cstat-no" title="statement not covered" >session.user.id;</span>
 &nbsp;
   const { data: rounds } = <span class="cstat-no" title="statement not covered" >await supabase</span>
     .from('rounds')
@@ -200,27 +211,31 @@ export async function <span class="fstat-no" title="function not covered" >loade
       tee_time,
       status,
       course:courses(name),
-      round_players(total_score, score_to_par, user_id)
+      round_players(total_score, score_to_par, user_id, is_owner, companion:companions(name))
     `
     )
-    .eq('user_id', session.userId)
+    .eq('user_id', userId)
     .order('play_date', { ascending: false });
 &nbsp;
   const <span class="cstat-no" title="statement not covered" >roundSummaries: RoundSummary[] = (rounds ?? []).map(<span class="fstat-no" title="function not covered" >(r</span>ound: any) =&gt; {</span>
-    const userPlayer = <span class="cstat-no" title="statement not covered" >round.round_players.find(<span class="fstat-no" title="function not covered" >(p</span>: any) =&gt; <span class="cstat-no" title="statement not covered" >p.user_id !== null)</span>;</span>
+    const ownerPlayer = <span class="cstat-no" title="statement not covered" >round.round_players.find(<span class="fstat-no" title="function not covered" >(p</span>: any) =&gt; <span class="cstat-no" title="statement not covered" >p.is_owner === true)</span>;</span>
+    const companions = <span class="cstat-no" title="statement not covered" >round.round_players</span>
+      .filter(<span class="fstat-no" title="function not covered" >(p</span>: any) =&gt; <span class="cstat-no" title="statement not covered" >!p.is_owner &amp;&amp; p.companion?.name)</span>
+      .map(<span class="fstat-no" title="function not covered" >(p</span>: any) =&gt; <span class="cstat-no" title="statement not covered" >p.companion.name)</span>;
 <span class="cstat-no" title="statement not covered" >    return {</span>
       id: round.id,
       play_date: round.play_date,
       tee_time: round.tee_time,
       status: round.status,
       course_name: round.course?.name || '코스 미지정',
-      total_score: userPlayer?.total_score || null,
-      score_to_par: userPlayer?.score_to_par || null,
+      total_score: ownerPlayer?.total_score || null,
+      score_to_par: ownerPlayer?.score_to_par || null,
       player_count: round.round_players.length,
+      companions,
     };
   });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return { rounds: roundSummaries };</span>
+<span class="cstat-no" title="statement not covered" >  return data({ rounds: roundSummaries }, { headers });</span>
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -229,7 +244,7 @@ export async function <span class="fstat-no" title="function not covered" >loade
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-17T23:32:46.059Z
+                at 2026-01-28T16:15:36.154Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -22,7 +22,9 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { formatScoreToPar } from '~/lib/score-utils';
 import { cn } from '~/lib/utils';
-import type { HoleInfo, RoundDetail } from '~/types';
+import type { HoleClubData, HoleInfo, RoundClubStats, RoundDetail } from '~/types';
+import { RoundClubStatsCard } from '~/components/stats/round-club-stats-card';
+import { ClubDisplay } from '~/components/club/club-display';
 import { useEffect, useState } from 'react';
 import type { ScoreDisplayMode } from '~/components/score/vertical-score-table';
 
@@ -33,7 +35,12 @@ export { loader, action } from '~/loaders/history-detail.server';
 export default function HistoryDetailPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { round } = loaderData as { round: RoundDetail; userName: string };
+  const { round, clubStats, holeClubs } = loaderData as {
+    round: RoundDetail;
+    userName: string;
+    clubStats: RoundClubStats;
+    holeClubs: HoleClubData[];
+  };
   const fetcher = useFetcher<{ deleted?: boolean }>();
   const navigate = useNavigate();
 
@@ -317,11 +324,28 @@ export default function HistoryDetailPage({
       </Card>
 
       {/* IN 코스 (후반) */}
-      <Card>
+      <Card className="mb-4">
         <CardContent className="p-2">
           {renderScoreTable(backNine, 'IN', true)}
         </CardContent>
       </Card>
+
+      {/* 라운드 클럽 통계 */}
+      {clubStats.clubUsage && clubStats.clubUsage.length > 0 && (
+        <RoundClubStatsCard stats={clubStats} />
+      )}
+
+      {/* 홀별 클럽 기록 */}
+      {holeClubs.some((h) => h.clubs && h.clubs.length > 0) && (
+        <Card className="mt-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">홀별 클럽 기록</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ClubDisplay holeClubs={holeClubs} holes={holes} />
+          </CardContent>
+        </Card>
+      )}
     </PageContainer>
   );
 }

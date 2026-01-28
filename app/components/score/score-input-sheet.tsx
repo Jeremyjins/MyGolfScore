@@ -1,5 +1,5 @@
 // Score Input Bottom Sheet Component
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -10,6 +10,10 @@ import {
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 import type { ScoreDisplayMode } from '~/components/score/vertical-score-table';
+import { ClubInputPanel } from '~/components/club/club-input-panel';
+import type { Club, ClubShotInput } from '~/types';
+
+export type InputMode = 'normal' | 'club';
 
 interface ScoreInputSheetProps {
   open: boolean;
@@ -18,8 +22,13 @@ interface ScoreInputSheetProps {
   par: number;
   currentScore: number | null;
   playerName: string;
-  onScoreChange: (score: number) => void;
+  onScoreChange: (score: number, clubShots?: ClubShotInput[]) => void;
   scoreDisplayMode?: ScoreDisplayMode;
+  // 클럽 입력 관련
+  userClubs?: Club[];
+  currentClubShots?: ClubShotInput[];
+  inputMode?: InputMode;
+  onInputModeChange?: (mode: InputMode) => void;
 }
 
 // 고정된 diff 옵션 (-1 ~ +4)
@@ -68,17 +77,34 @@ export function ScoreInputSheet({
   playerName,
   onScoreChange,
   scoreDisplayMode = 'par',
+  // 클럽 입력 관련
+  userClubs = [],
+  currentClubShots = [],
+  inputMode = 'normal',
+  onInputModeChange,
 }: ScoreInputSheetProps) {
   const [selectedScore, setSelectedScore] = useState<number | null>(
     currentScore ?? par
   );
 
-  // 시트가 열릴 때마다 선택값 초기화
+  // 클럽 입력 상태
+  const [clubShots, setClubShots] = useState<ClubShotInput[]>(currentClubShots);
+
+  // 시트 open 전환 추적을 위한 ref (무한 루프 방지)
+  const prevOpenRef = useRef(false);
+
+  // 시트가 열릴 때만 선택값 초기화 (open transition: false -> true)
   useEffect(() => {
-    if (open) {
+    // open 상태로 전환될 때만 상태 초기화
+    if (open && !prevOpenRef.current) {
       setSelectedScore(currentScore ?? par);
+      setClubShots(currentClubShots);
     }
-  }, [open, currentScore, par]);
+    prevOpenRef.current = open;
+  }, [open, currentScore, par, currentClubShots]);
+
+  // 클럽 입력 가능 여부 (사용자 클럽이 등록되어 있어야 함)
+  const canUseClubMode = userClubs.length > 0;
 
   // diff를 실제 스코어로 변환
   const diffToScore = (diff: number) => par + diff;
@@ -119,7 +145,31 @@ export function ScoreInputSheet({
 
   const handleConfirm = () => {
     if (selectedScore !== null) {
-      onScoreChange(selectedScore);
+      onScoreChange(selectedScore, inputMode === 'club' ? clubShots : undefined);
+      onOpenChange(false);
+    }
+  };
+
+  // 클럽 모드: 샷 추가
+  const handleAddClubShot = (club: Club) => {
+    const newShot: ClubShotInput = {
+      clubId: club.id,
+      clubCode: club.code,
+      shotOrder: clubShots.length + 1,
+      isPutt: club.category === 'PUTTER',
+    };
+    setClubShots([...clubShots, newShot]);
+  };
+
+  // 클럽 모드: 마지막 샷 삭제
+  const handleRemoveLastClubShot = () => {
+    setClubShots(clubShots.slice(0, -1));
+  };
+
+  // 클럽 모드: 확인
+  const handleClubConfirm = () => {
+    if (clubShots.length > 0) {
+      onScoreChange(clubShots.length, clubShots);
       onOpenChange(false);
     }
   };
@@ -160,7 +210,7 @@ export function ScoreInputSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-auto max-h-[85vh]">
-        <SheetHeader className="pb-4">
+        <SheetHeader className="pb-2">
           <SheetTitle className="text-xl">
             {holeNumber}번 홀 - {playerName}
           </SheetTitle>
@@ -169,6 +219,49 @@ export function ScoreInputSheet({
           </SheetDescription>
         </SheetHeader>
 
+        {/* 입력 모드 토글 (클럽이 등록된 경우에만 표시) */}
+        {canUseClubMode && onInputModeChange && (
+          <div className="flex justify-center mb-3">
+            <div className="inline-flex rounded-lg border p-0.5 bg-muted/50">
+              <button
+                onClick={() => onInputModeChange('normal')}
+                className={cn(
+                  'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  inputMode === 'normal'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                일반 입력
+              </button>
+              <button
+                onClick={() => onInputModeChange('club')}
+                className={cn(
+                  'px-4 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  inputMode === 'club'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                클럽 입력
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 클럽 입력 모드 */}
+        {inputMode === 'club' && canUseClubMode ? (
+          <ClubInputPanel
+            userClubs={userClubs}
+            selectedShots={clubShots}
+            onAddShot={handleAddClubShot}
+            onRemoveLastShot={handleRemoveLastClubShot}
+            onConfirm={handleClubConfirm}
+            expectedScore={currentScore}
+            onCancel={() => onOpenChange(false)}
+          />
+        ) : (
+        /* 일반 입력 모드 */
         <div className="space-y-5">
           {/* 현재 스코어 표시 + 미세 조정 (상단) */}
           <div className="bg-muted/50 rounded-xl p-4">
@@ -301,6 +394,7 @@ export function ScoreInputSheet({
             </Button>
           </div>
         </div>
+        )}
       </SheetContent>
     </Sheet>
   );

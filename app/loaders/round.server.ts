@@ -3,7 +3,7 @@ import type { Route } from '../routes/+types/round.$id';
 import { requireAuth } from '~/lib/auth.server';
 import { getEnvFromContext } from '~/lib/supabase.server';
 import { data } from 'react-router';
-import type { Course, HoleInfo, PlayerScore, RoundDetail } from '~/types';
+import type { Club, Course, HoleInfo, PlayerScore, RoundDetail } from '~/types';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const env = getEnvFromContext(context);
@@ -11,8 +11,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const userId = session.user.id;
   const { id } = params;
 
-  // 라운드 정보와 사용자의 코스 목록을 병렬로 가져오기
-  const [roundResult, coursesResult] = await Promise.all([
+  // 라운드 정보와 사용자의 코스 목록, 유저 클럽을 병렬로 가져오기
+  const [roundResult, coursesResult, userClubsResult] = await Promise.all([
     supabase
       .from('rounds')
       .select(
@@ -39,6 +39,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       .eq('user_id', userId)
       .order('is_favorite', { ascending: false })
       .order('name'),
+    supabase
+      .from('user_clubs')
+      .select('club:clubs(*)')
+      .eq('user_id', userId)
+      .eq('is_active', true),
   ]);
 
   const { data: round, error: roundError } = roundResult;
@@ -109,8 +114,14 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     updated_at: c.updated_at ?? '',
   }));
 
+  // Transform user clubs
+  const userClubs: Club[] = (userClubsResult.data ?? [])
+    .map((uc) => uc.club as unknown as Club)
+    .filter((c): c is Club => c !== null)
+    .sort((a, b) => a.sort_order - b.sort_order);
+
   return data(
-    { round: roundDetail, userName: session.profile.name, courses: transformedCourses },
+    { round: roundDetail, userName: session.profile.name, courses: transformedCourses, userClubs },
     { headers }
   );
 }
@@ -123,11 +134,38 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get('intent');
 
+  // UUID 형식 검증 함수
+  const isValidUUID = (uuid: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+
   switch (intent) {
     case 'updateScore': {
       const roundPlayerId = formData.get('roundPlayerId') as string;
       const holeNumber = parseInt(formData.get('holeNumber') as string);
       const strokes = parseInt(formData.get('strokes') as string);
+      const clubShotsJson = formData.get('clubShots') as string | null;
+
+      // 입력값 검증
+      if (!roundPlayerId || !isValidUUID(roundPlayerId)) {
+        return data({ error: 'Invalid roundPlayerId' }, { status: 400, headers });
+      }
+      if (isNaN(holeNumber) || holeNumber < 1 || holeNumber > 18) {
+        return data({ error: 'Invalid holeNumber' }, { status: 400, headers });
+      }
+      if (isNaN(strokes) || strokes < 1 || strokes > 99) {
+        return data({ error: 'Invalid strokes' }, { status: 400, headers });
+      }
+
+      // roundPlayerId 소유권 검증 (Defense in Depth)
+      const { data: roundPlayer } = await supabase
+        .from('round_players')
+        .select('id, round:rounds!inner(user_id)')
+        .eq('id', roundPlayerId)
+        .single();
+
+      if (!roundPlayer || (roundPlayer.round as { user_id: string }).user_id !== userId) {
+        return data({ error: 'Unauthorized' }, { status: 403, headers });
+      }
 
       const { data: existing } = await supabase
         .from('scores')
@@ -136,17 +174,71 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .eq('hole_number', holeNumber)
         .single();
 
+      let scoreId: string;
+
       if (existing) {
         await supabase
           .from('scores')
           .update({ strokes })
           .eq('id', existing.id);
+        scoreId = existing.id;
       } else {
-        await supabase.from('scores').insert({
-          round_player_id: roundPlayerId,
-          hole_number: holeNumber,
-          strokes,
-        });
+        const { data: newScore } = await supabase
+          .from('scores')
+          .insert({
+            round_player_id: roundPlayerId,
+            hole_number: holeNumber,
+            strokes,
+          })
+          .select('id')
+          .single();
+        scoreId = newScore!.id;
+      }
+
+      // 클럽 샷 저장 (있는 경우)
+      if (clubShotsJson) {
+        let clubShots: {
+          clubId: string;
+          shotOrder: number;
+          isPutt: boolean;
+        }[];
+
+        // JSON 파싱 안전하게 처리
+        try {
+          clubShots = JSON.parse(clubShotsJson);
+        } catch {
+          return data({ error: 'Invalid clubShots JSON' }, { status: 400, headers });
+        }
+
+        // clubShots 배열 검증
+        if (!Array.isArray(clubShots)) {
+          return data({ error: 'clubShots must be an array' }, { status: 400, headers });
+        }
+
+        // 각 항목 검증
+        for (const shot of clubShots) {
+          if (!shot.clubId || !isValidUUID(shot.clubId)) {
+            return data({ error: 'Invalid clubId in clubShots' }, { status: 400, headers });
+          }
+          if (typeof shot.shotOrder !== 'number' || shot.shotOrder < 1) {
+            return data({ error: 'Invalid shotOrder in clubShots' }, { status: 400, headers });
+          }
+        }
+
+        // 기존 클럽 샷 삭제
+        await supabase.from('club_shots').delete().eq('score_id', scoreId);
+
+        // 새 클럽 샷 삽입
+        if (clubShots.length > 0) {
+          await supabase.from('club_shots').insert(
+            clubShots.map((shot) => ({
+              score_id: scoreId,
+              club_id: shot.clubId,
+              shot_order: shot.shotOrder,
+              is_putt: shot.isPutt,
+            }))
+          );
+        }
       }
 
       const { data: allScores } = await supabase

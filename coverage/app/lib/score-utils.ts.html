@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.27% </span>
+                <span class="strong">84.41% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>65/79</span>
+                <span class='fraction'>65/77</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.03% </span>
+                <span class="strong">83.92% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>47/54</span>
+                <span class='fraction'>47/56</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">79.24% </span>
+                <span class="strong">80.76% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>42/53</span>
+                <span class='fraction'>42/52</span>
             </div>
         
             
@@ -218,9 +218,7 @@
 <a name='L153'></a><a href='#L153'>153</a>
 <a name='L154'></a><a href='#L154'>154</a>
 <a name='L155'></a><a href='#L155'>155</a>
-<a name='L156'></a><a href='#L156'>156</a>
-<a name='L157'></a><a href='#L157'>157</a>
-<a name='L158'></a><a href='#L158'>158</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L156'></a><a href='#L156'>156</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -230,9 +228,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -311,16 +309,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -387,7 +383,7 @@ export function calculateToPar(strokes: number, par: number): number {
 &nbsp;
 // 스코어 표시 텍스트 (Par 모드)
 export function formatScoreToPar(toPar: number): string {
-  if (toPar === 0) return 'E';
+  if (toPar === 0) return '0';
   if (toPar &gt; 0) return `+${toPar}`;
   return `${toPar}`;
 }
@@ -460,30 +456,28 @@ export function calculateTotalPar(holes: HoleInfo[]): number {
 &nbsp;
 // 플레이어 스코어 요약 생성
 export function <span class="fstat-no" title="function not covered" >buildPlayerScore(</span>
-  playerId: string,
-  playerName: string,
-  isOwner: boolean,
+  id: string,
+  name: string,
+  isUser: boolean,
   scores: { hole_number: number; strokes: number }[],
   holes: HoleInfo[]
 ): PlayerScore {
-  const scoreMap = <span class="cstat-no" title="statement not covered" >new Map&lt;number, number&gt;();</span>
-<span class="cstat-no" title="statement not covered" >  scores.forEach(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; <span class="cstat-no" title="statement not covered" >scoreMap.set(s.hole_number, s.strokes))</span>;</span>
+  const scoreRecord: Record&lt;number, number&gt; = <span class="cstat-no" title="statement not covered" >{};</span>
+<span class="cstat-no" title="statement not covered" >  scores.forEach(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    scoreRecord[s.hole_number] = s.strokes;</span>
+  });
 &nbsp;
-  const outTotal = <span class="cstat-no" title="statement not covered" >calculateOutScore(scores);</span>
-  const inTotal = <span class="cstat-no" title="statement not covered" >calculateInScore(scores);</span>
-  const total = <span class="cstat-no" title="statement not covered" >outTotal + inTotal;</span>
+  const totalScore = <span class="cstat-no" title="statement not covered" >calculateTotalScore(scores);</span>
   const totalPar = <span class="cstat-no" title="statement not covered" >calculateTotalPar(holes);</span>
-  const toPar = <span class="cstat-no" title="statement not covered" >scores.length === 18 ? total - totalPar : 0;</span>
+  const scoreToPar = <span class="cstat-no" title="statement not covered" >scores.length === 18 ? totalScore - totalPar : null;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return {</span>
-    playerId,
-    playerName,
-    isOwner,
-    scores: scoreMap,
-    outTotal,
-    inTotal,
-    total,
-    toPar,
+    id,
+    name,
+    isUser,
+    scores: scoreRecord,
+    totalScore: scores.length &gt; 0 ? totalScore : null,
+    scoreToPar,
   };
 }
 &nbsp;
@@ -541,7 +535,7 @@ export function generateDefaultHoles(): HoleInfo[] {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-17T23:32:46.059Z
+                at 2026-01-28T16:15:36.154Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

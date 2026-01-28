@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ScoreDistributionChart } from '~/components/charts/score-distribution-chart';
 import { ScoreTrendChart } from '~/components/charts/score-trend-chart';
 import { StatsCards } from '~/components/stats/stats-cards';
+import { ClubStatsSection } from '~/components/stats/club-stats-section';
+import type { UserClubStats } from '~/types';
 import {
   ChartContainer,
   ChartTooltip,
@@ -94,7 +96,7 @@ const calculateAverageHistory = (rounds: RoundDataForCalc[]): number[] => {
 };
 
 export default function StatsPage({ loaderData }: Route.ComponentProps) {
-  const { stats } = loaderData;
+  const { stats, clubStats } = loaderData as { stats: typeof loaderData.stats; clubStats: UserClubStats };
 
   // Calculate average score from roundHistory (par-relative)
   const roundHistory = stats.roundHistory || [];
@@ -316,6 +318,11 @@ export default function StatsPage({ loaderData }: Route.ComponentProps) {
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* 클럽 통계 */}
+      {clubStats && clubStats.totalRounds > 0 && (
+        <ClubStatsSection stats={clubStats} />
       )}
 
       {stats.totalRounds === 0 && (

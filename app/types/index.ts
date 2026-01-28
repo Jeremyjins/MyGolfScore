@@ -82,6 +82,94 @@ export interface Score {
 }
 
 // ============================================
+// Club Types
+// ============================================
+
+export type ClubCategory = 'DRIVER' | 'WOOD' | 'HYBRID' | 'IRON' | 'WEDGE' | 'PUTTER';
+
+export interface Club {
+  id: string;
+  code: string;
+  name: string;
+  category: ClubCategory;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface UserClub {
+  id: string;
+  user_id: string;
+  club_id: string;
+  is_active: boolean;
+  created_at: string;
+  club?: Club;
+}
+
+export interface ClubShot {
+  id: string;
+  score_id: string;
+  club_id: string;
+  shot_order: number;
+  is_putt: boolean;
+  created_at: string;
+  club?: Club;
+}
+
+// Club input state for score entry
+export interface ClubShotInput {
+  clubId: string;
+  clubCode: string;
+  shotOrder: number;
+  isPutt: boolean;
+}
+
+// ============================================
+// Club Statistics Types
+// ============================================
+
+export interface PuttDistribution {
+  putts: number; // 0, 1, 2, 3, 4 (4 means 4+)
+  count: number;
+  percentage?: number;
+}
+
+export interface ClubUsage {
+  code: string;
+  name: string;
+  count: number;
+}
+
+export interface ClubUsageAverage {
+  code: string;
+  name: string;
+  averageUsage: number;
+}
+
+export interface RoundClubStats {
+  totalPutts: number;
+  puttDistribution: PuttDistribution[] | null;
+  clubUsage: ClubUsage[] | null;
+}
+
+export interface UserClubStats {
+  totalRounds: number;
+  averagePutts: number | null;
+  puttDistribution: PuttDistribution[] | null;
+  clubUsageAverage: ClubUsageAverage[] | null;
+}
+
+export interface HoleClubData {
+  hole_number: number;
+  strokes: number;
+  clubs: {
+    shotOrder: number;
+    clubCode: string;
+    clubName: string;
+    isPutt: boolean;
+  }[] | null;
+}
+
+// ============================================
 // Extended Types (with relations)
 // ============================================
 
@@ -162,24 +250,6 @@ export interface PlayerScore {
 // Component Props Types
 // ============================================
 
-export interface ScoreTableProps {
-  course: {
-    name: string;
-    holes: HoleInfo[];
-    total_par: number;
-  };
-  players: {
-    id: string;
-    name: string;
-    isOwner: boolean;
-    scores: { hole_number: number; strokes: number }[];
-  }[];
-  activeHalf: 'out' | 'in';
-  displayMode: 'par' | 'stroke';
-  onScoreSelect: (playerId: string, hole: number, currentScore?: number) => void;
-  selectedCell?: { playerId: string; hole: number };
-}
-
 export interface ScoreInputSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -190,24 +260,10 @@ export interface ScoreInputSheetProps {
   onScoreSubmit: (score: number) => void;
 }
 
-export interface ScoreCellProps {
-  par: number;
-  strokes?: number;
-  displayMode: 'par' | 'stroke';
-  isSelected: boolean;
-  onClick: () => void;
-}
-
 export interface RoundCardProps {
   round: RoundWithDetails;
   ownerName: string;
   onClick: () => void;
-}
-
-export interface PinPadProps {
-  onComplete: (pin: string) => void;
-  isLoading?: boolean;
-  error?: string;
 }
 
 // ============================================
@@ -236,16 +292,6 @@ export interface UpdateScoreInput {
   roundPlayerId: string;
   holeNumber: number;
   strokes: number;
-}
-
-// ============================================
-// Auth Types
-// ============================================
-
-export interface Session {
-  userId: string;
-  userName: string;
-  expiresAt: number;
 }
 
 // ============================================

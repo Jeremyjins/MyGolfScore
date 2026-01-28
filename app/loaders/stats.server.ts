@@ -3,6 +3,7 @@ import type { Route } from '../routes/+types/_layout.stats';
 import { requireAuth } from '~/lib/auth.server';
 import { getEnvFromContext } from '~/lib/supabase.server';
 import { data } from 'react-router';
+import type { UserClubStats } from '~/types';
 
 // 라운드별 데이터 (차트용)
 interface RoundData {
@@ -53,30 +54,30 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { session, supabase, headers } = await requireAuth(request, env);
   const userId = session.user.id;
 
-  // 기존 RPC 호출
-  const { data: rpcResult } = await supabase.rpc('get_user_stats', {
-    p_user_id: userId,
-  });
-
-  // 라운드별 세부 정보 쿼리
-  const { data: roundsData } = await supabase
-    .from('rounds')
-    .select(`
-      id,
-      play_date,
-      course:courses(holes),
-      round_players!inner(
+  // 기존 RPC 호출 + 클럽 통계 RPC + 라운드 데이터 병렬 로드
+  const [{ data: rpcResult }, { data: clubStatsResult }, { data: roundsData }] = await Promise.all([
+    supabase.rpc('get_user_stats', { p_user_id: userId }),
+    supabase.rpc('get_user_club_stats', { p_user_id: userId }),
+    // 라운드별 세부 정보 쿼리 (병렬화)
+    supabase
+      .from('rounds')
+      .select(`
         id,
-        is_owner,
-        total_score,
-        score_to_par
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('status', 'completed')
-    .eq('round_players.is_owner', true)
-    .order('play_date', { ascending: true })
-    .limit(50); // 핸디캡/평균 추이 계산을 위해 충분한 데이터 제공
+        play_date,
+        course:courses(holes),
+        round_players!inner(
+          id,
+          is_owner,
+          total_score,
+          score_to_par
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'completed')
+      .eq('round_players.is_owner', true)
+      .order('play_date', { ascending: true })
+      .limit(50), // 핸디캡/평균 추이 계산을 위해 충분한 데이터 제공
+  ]);
 
   // 라운드 히스토리 구성
   const roundHistory: RoundData[] = [];
@@ -126,5 +127,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       }
     : defaultStats;
 
-  return data({ stats }, { headers });
+  // 클럽 통계 처리
+  const clubStats: UserClubStats = (clubStatsResult as UserClubStats | null) ?? {
+    totalRounds: 0,
+    averagePutts: null,
+    puttDistribution: null,
+    clubUsageAverage: null,
+  };
+
+  return data({ stats, clubStats }, { headers });
 }

@@ -269,6 +269,114 @@ export type Database = {
           },
         ]
       }
+      clubs: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          category: 'DRIVER' | 'WOOD' | 'HYBRID' | 'IRON' | 'WEDGE' | 'PUTTER'
+          sort_order: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          code: string
+          name: string
+          category: 'DRIVER' | 'WOOD' | 'HYBRID' | 'IRON' | 'WEDGE' | 'PUTTER'
+          sort_order: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string
+          category?: 'DRIVER' | 'WOOD' | 'HYBRID' | 'IRON' | 'WEDGE' | 'PUTTER'
+          sort_order?: number
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      user_clubs: {
+        Row: {
+          id: string
+          user_id: string
+          club_id: string
+          is_active: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          club_id: string
+          is_active?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          club_id?: string
+          is_active?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_clubs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_clubs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_shots: {
+        Row: {
+          id: string
+          score_id: string
+          club_id: string
+          shot_order: number
+          is_putt: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          score_id: string
+          club_id: string
+          shot_order: number
+          is_putt?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          score_id?: string
+          club_id?: string
+          shot_order?: number
+          is_putt?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shots_score_id_fkey"
+            columns: ["score_id"]
+            isOneToOne: false
+            referencedRelation: "scores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_shots_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -290,6 +398,9 @@ export type Database = {
       }
       get_round_detail: { Args: { p_round_id: string }; Returns: Json }
       get_user_stats: { Args: { p_user_id: string }; Returns: Json }
+      get_round_club_stats: { Args: { p_round_id: string }; Returns: Json }
+      get_round_hole_clubs: { Args: { p_round_id: string }; Returns: Json }
+      get_user_club_stats: { Args: { p_user_id: string }; Returns: Json }
       record_failed_login: { Args: { user_id: string }; Returns: Json }
       record_successful_login: { Args: { user_id: string }; Returns: undefined }
       reset_login_state: { Args: { user_id: string }; Returns: undefined }

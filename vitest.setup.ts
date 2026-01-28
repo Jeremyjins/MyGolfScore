@@ -1,4 +1,5 @@
 import { vi, beforeEach, afterEach } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 
 // Mock Web Crypto API for PBKDF2 testing
 const mockCrypto = {

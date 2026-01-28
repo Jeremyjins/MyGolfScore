@@ -36,15 +36,20 @@ import { formatScoreToPar } from '~/lib/score-utils';
 import { cn } from '~/lib/utils';
 import { format, parse } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import type { HoleInfo, PlayerScore, RoundDetail, Course } from '~/types';
+import type { Club, ClubShotInput, HoleInfo, PlayerScore, RoundDetail, Course } from '~/types';
+import type { InputMode } from '~/components/score/score-input-sheet';
 
 export { loader, action } from '~/loaders/round.server';
 
 const STORAGE_KEY_PREFIX = 'round_scores_';
 const SCORE_MODE_KEY = 'score_display_mode';
+const INPUT_MODE_KEY = 'score_input_mode';
+
+// 빈 배열 상수 (참조 안정성 보장 - 무한 루프 방지)
+const EMPTY_CLUBS: Club[] = [];
 
 export default function RoundPage({ loaderData }: Route.ComponentProps) {
-  const { round, courses } = loaderData as { round: RoundDetail; userName: string; courses: Course[] };
+  const { round, courses, userClubs } = loaderData as { round: RoundDetail; userName: string; courses: Course[]; userClubs: Club[] };
   const fetcher = useFetcher<{ success?: boolean; completed?: boolean; courseUpdated?: boolean }>();
   const navigate = useNavigate();
 
@@ -74,6 +79,14 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
       return (localStorage.getItem(SCORE_MODE_KEY) as ScoreDisplayMode) || 'par';
     }
     return 'par';
+  });
+
+  // 입력 모드: normal (일반) / club (클럽)
+  const [inputMode, setInputMode] = useState<InputMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(INPUT_MODE_KEY) as InputMode) || 'normal';
+    }
+    return 'normal';
   });
 
   // 저장 상태 표시
@@ -110,6 +123,11 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     localStorage.setItem(SCORE_MODE_KEY, scoreDisplayMode);
   }, [scoreDisplayMode]);
+
+  // 입력 모드 저장
+  useEffect(() => {
+    localStorage.setItem(INPUT_MODE_KEY, inputMode);
+  }, [inputMode]);
 
   // 스코어 변경 시 LocalStorage에 저장
   const saveToStorage = useCallback(
@@ -149,7 +167,7 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     setInputSheet({ open: true, playerId, holeNumber });
   };
 
-  const handleScoreChange = (score: number) => {
+  const handleScoreChange = (score: number, clubShots?: ClubShotInput[]) => {
     const { playerId, holeNumber } = inputSheet;
 
     // Optimistic UI: 로컬 상태 즉시 업데이트
@@ -168,15 +186,25 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
     });
 
     // 서버에 비동기 저장
-    fetcher.submit(
-      {
-        intent: 'updateScore',
-        roundPlayerId: playerId,
-        holeNumber: String(holeNumber),
-        strokes: String(score),
-      },
-      { method: 'POST' }
-    );
+    const submitData: Record<string, string> = {
+      intent: 'updateScore',
+      roundPlayerId: playerId,
+      holeNumber: String(holeNumber),
+      strokes: String(score),
+    };
+
+    // 클럽 샷 데이터가 있으면 추가
+    if (clubShots && clubShots.length > 0) {
+      submitData.clubShots = JSON.stringify(
+        clubShots.map((shot) => ({
+          clubId: shot.clubId,
+          shotOrder: shot.shotOrder,
+          isPutt: shot.isPutt,
+        }))
+      );
+    }
+
+    fetcher.submit(submitData, { method: 'POST' });
   };
 
   const handleComplete = () => {
@@ -444,6 +472,10 @@ export default function RoundPage({ loaderData }: Route.ComponentProps) {
           playerName={currentPlayer.name}
           onScoreChange={handleScoreChange}
           scoreDisplayMode={scoreDisplayMode}
+          // 클럽 입력은 사용자 본인만 가능
+          userClubs={currentPlayer.isUser ? userClubs : EMPTY_CLUBS}
+          inputMode={currentPlayer.isUser ? inputMode : 'normal'}
+          onInputModeChange={currentPlayer.isUser ? setInputMode : undefined}
         />
       )}
 

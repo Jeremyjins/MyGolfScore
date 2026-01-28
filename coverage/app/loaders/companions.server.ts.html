@@ -117,23 +117,10 @@
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
 <a name='L54'></a><a href='#L54'>54</a>
-<a name='L55'></a><a href='#L55'>55</a>
-<a name='L56'></a><a href='#L56'>56</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L55'></a><a href='#L55'>55</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -141,6 +128,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -173,60 +171,59 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Companions page loader and action
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Companions page loader and action with Supabase Auth
 import type { Route } from '../routes/+types/_layout.companions';
-import { getSupabase, getEnvFromContext } from '~/lib/supabase.server';
 import { requireAuth } from '~/lib/auth.server';
+import { getEnvFromContext } from '~/lib/supabase.server';
+import { data } from 'react-router';
 &nbsp;
 export async function <span class="fstat-no" title="function not covered" >loader({</span> request, context }: Route.LoaderArgs) {
-  const <span class="cstat-no" title="statement not covered" >session = requireAuth(request);</span>
-&nbsp;
   const <span class="cstat-no" title="statement not covered" >env = getEnvFromContext(context);</span>
-  const <span class="cstat-no" title="statement not covered" >supabase = getSupabase(env);</span>
+  const { session, supabase, headers } = <span class="cstat-no" title="statement not covered" >await requireAuth(request, env);</span>
+  const userId = <span class="cstat-no" title="statement not covered" >session.user.id;</span>
 &nbsp;
   const { data: companions } = <span class="cstat-no" title="statement not covered" >await supabase.rpc('get_companions_with_stats', {</span>
-    p_user_id: session.userId,
+    p_user_id: userId,
   });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return { companions: companions ?? [] };</span>
+<span class="cstat-no" title="statement not covered" >  return data({ companions: companions ?? [] }, { headers });</span>
 }
 &nbsp;
 export async function <span class="fstat-no" title="function not covered" >action({</span> request, context }: Route.ActionArgs) {
-  const <span class="cstat-no" title="statement not covered" >session = requireAuth(request);</span>
+  const <span class="cstat-no" title="statement not covered" >env = getEnvFromContext(context);</span>
+  const { session, supabase, headers } = <span class="cstat-no" title="statement not covered" >await requireAuth(request, env);</span>
+  const userId = <span class="cstat-no" title="statement not covered" >session.user.id;</span>
   const formData = <span class="cstat-no" title="statement not covered" >await request.formData();</span>
   const intent = <span class="cstat-no" title="statement not covered" >formData.get('intent');</span>
-&nbsp;
-  const <span class="cstat-no" title="statement not covered" >env = getEnvFromContext(context);</span>
-  const <span class="cstat-no" title="statement not covered" >supabase = getSupabase(env);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  switch (intent) {</span>
     case 'create': {
       const name = <span class="cstat-no" title="statement not covered" >formData.get('name') as string;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (!name || name.trim() === '') {</span>
-<span class="cstat-no" title="statement not covered" >        return { error: '동반자 이름을 입력하세요.' };</span>
+<span class="cstat-no" title="statement not covered" >        return data({ error: '동반자 이름을 입력하세요.' }, { headers });</span>
       }
 &nbsp;
       const { error } = <span class="cstat-no" title="statement not covered" >await supabase.from('companions').insert({</span>
-        user_id: session.userId,
+        user_id: userId,
         name: name.trim(),
       });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (error) {</span>
-<span class="cstat-no" title="statement not covered" >        return { error: '동반자 등록에 실패했습니다.' };</span>
+<span class="cstat-no" title="statement not covered" >        return data({ error: '동반자 등록에 실패했습니다.' }, { headers });</span>
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      return { success: true };</span>
+<span class="cstat-no" title="statement not covered" >      return data({ success: true }, { headers });</span>
     }
 &nbsp;
     case 'delete': {
       const id = <span class="cstat-no" title="statement not covered" >formData.get('id') as string;</span>
 <span class="cstat-no" title="statement not covered" >      await supabase.from('companions').delete().eq('id', id);</span>
-<span class="cstat-no" title="statement not covered" >      return { success: true };</span>
+<span class="cstat-no" title="statement not covered" >      return data({ success: true }, { headers });</span>
     }
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return { error: 'Unknown action' };</span>
+<span class="cstat-no" title="statement not covered" >  return data({ error: 'Unknown action' }, { headers });</span>
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -235,7 +232,7 @@ export async function <span class="fstat-no" title="function not covered" >actio
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-17T23:32:46.059Z
+                at 2026-01-28T16:15:36.154Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
